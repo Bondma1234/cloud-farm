@@ -1,0 +1,91 @@
+/* ================================================
+   云上田园 · 设计系统 (Design Tokens)
+   ================================================ */
+:root {
+  /* Colors */
+  --color-primary:      #4CA777;
+  --color-primary-dark: #2E7D32;
+  --color-primary-light:#E8F4EA;
+  --color-accent:       #F4B942;
+  --color-accent-light: #FFF8E1;
+  --color-danger:       #E53935;
+  --color-warning:      #FB8C00;
+  --color-info:         #1976D2;
+  --color-success:      #43A047;
+
+  --color-text:         #1B1B1B;
+  --color-text-sub:     #555;
+  --color-text-mute:    #999;
+  --color-text-on-dark: #FFF;
+
+  --color-bg:           #F5F7F6;
+  --color-surface:      #FFFFFF;
+  --color-surface-alt:  #FAFBFA;
+  --color-border:       #EAEAEA;
+  --color-divider:      #F0F0F0;
+
+  /* Typography */
+  --font-family:  "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "Consolas", "Courier New", monospace;
+
+  --fs-xs:   11px;
+  --fs-sm:   12px;
+  --fs-md:   14px;
+  --fs-base: 15px;
+  --fs-lg:   17px;
+  --fs-xl:   20px;
+  --fs-2xl:  24px;
+  --fs-3xl:  32px;
+
+  /* Spacing */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Radius */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-2xl: 20px;
+  --r-pill: 999px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+  /* Duration */
+  --t-fast: 120ms;
+  --t-base: 240ms;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { font-family: var(--font-family); color: var(--color-text); background: var(--color-bg); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-primary-dark); text-decoration: none; }
+img, svg { display: block; }
+button { font: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+input, textarea, select { font: inherit; color: inherit; }
+ul, ol { list-style: none; }
+
+/* Utility */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: var(--sp-1); }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.gap-4 { gap: var(--sp-4); }
+.w-full { width: 100%; }
+.text-mute { color: var(--color-text-mute); }
+.text-sub { color: var(--color-text-sub); }
+.text-xs { font-size: var(--fs-xs); }
+.text-sm { font-size: var(--fs-sm); }
+.text-lg { font-size: var(--fs-lg); }
+.text-xl { font-size: var(--fs-xl); }
+.bold { font-weight: 600; }

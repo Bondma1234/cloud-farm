@@ -1,0 +1,12 @@
+@use './styles/tokens.scss';
+
+page,
+.taro_page,
+#app {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  min-height: 100vh;
+}
+
+* { box-sizing: border-box; }

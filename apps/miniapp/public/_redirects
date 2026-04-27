@@ -1,0 +1,4 @@
+# Cloudflare Pages / Netlify SPA fallback
+# 当前使用 hash 路由（#/pages/...），其实不强依赖这条
+# 但保留以备未来切到 HTML5 history 模式
+/*    /index.html   200

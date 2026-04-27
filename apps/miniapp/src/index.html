@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#4CA777">
+  <meta name="description" content="云上田园 · 一线城市家庭的远程认养农场 · 24h直播 · 随手互动 · 产地直送">
+  <title>云上田园 · 远程认养农场 | 24h直播 随手互动 产地直送</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%;
+      background: #F5F7F6; font-family: "PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+      color: #1B1B1B; -webkit-font-smoothing: antialiased; }
+    /* 移动端：锁定视口高度，让 TabBar 贴底 */
+    html, body { height: 100%; overflow: hidden; }
+    #app { height: 100%; }
+
+    /* ========== Site Shell ========== */
+    .site-shell { height: 100%; display: flex; flex-direction: column; }
+
+    /* ========== 顶部导航（桌面可见） ========== */
+    .site-nav {
+      display: none;
+      height: 64px; background: #fff; border-bottom: 1px solid #EEF1EF;
+      padding: 0 32px; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(1.4) blur(8px);
+    }
+    .site-nav .brand { display: flex; align-items: center; gap: 10px;
+      font-size: 18px; font-weight: 700; color: #2E7D32; text-decoration: none; cursor: pointer; }
+    .site-nav .brand .logo { font-size: 24px; }
+    .site-nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+    .site-nav a.nav-link { padding: 8px 16px; border-radius: 10px; color: #333;
+      text-decoration: none; font-size: 15px; cursor: pointer; transition: all .15s; }
+    .site-nav a.nav-link:hover { background: #F0F7F2; color: #2E7D32; }
+    .site-nav a.nav-link.active { background: #E8F4EA; color: #2E7D32; font-weight: 600; }
+    .site-nav .actions { display: flex; align-items: center; gap: 12px; }
+    .site-nav .cta-ghost { padding: 7px 16px; border: 1px solid #D6E5DA; border-radius: 22px;
+      background: #fff; color: #2E7D32; font-size: 14px; cursor: pointer; }
+    .site-nav .cta {
+      padding: 8px 20px; background: linear-gradient(135deg, #4CA777, #2E7D32);
+      color: #fff; border-radius: 22px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: 0; box-shadow: 0 4px 12px rgba(46,125,50,0.25);
+    }
+
+    /* ========== 主内容区（居中柱） ========== */
+    .site-main {
+      flex: 1; display: flex; flex-direction: column;
+      width: 100%; background: #F5F7F6; overflow: hidden;
+    }
+    .site-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+    .site-content::-webkit-scrollbar { width: 6px; }
+    .site-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+
+    /* ========== 底部 TabBar（仅移动端 & tab 页显示） ========== */
+    .site-tabbar {
+      flex-shrink: 0; height: 64px; background: #fff; border-top: 1px solid #F0F0F0;
+      display: flex; padding-bottom: env(safe-area-inset-bottom);
+    }
+    .site-tabbar .tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      color: #999; font-size: 11px; text-decoration: none; cursor: pointer; padding-top: 10px;
+    }
+    .site-tabbar .tab.active { color: #2E7D32; }
+    .site-tabbar .tab .ico { font-size: 20px; }
+
+    /* ========== 页脚（桌面可见） ========== */
+    .site-footer { display: none; padding: 32px 24px; background: #fff; border-top: 1px solid #EEF1EF; }
+    .site-footer .inner { max-width: 1080px; margin: 0 auto; display: flex;
+      justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .site-footer .copy { color: #666; font-size: 13px; line-height: 1.8; }
+    .site-footer .brand-line { font-weight: 600; color: #2E7D32; margin-bottom: 4px; }
+    .site-footer .links { display: flex; gap: 20px; color: #888; font-size: 13px; }
+    .site-footer .links a { color: #888; text-decoration: none; }
+    .site-footer .links a:hover { color: #2E7D32; }
+
+    /* ========== 桌面布局（≥768px） ========== */
+    @media (min-width: 768px) {
+      /* 桌面端：恢复页面级滚动，让导航 sticky、页脚自然在底部 */
+      html, body { height: auto; overflow: auto; background: #EEF1EF; }
+      #app, .site-shell { height: auto; min-height: 100vh; }
+      .site-nav { display: flex; }
+      .site-main {
+        max-width: 480px; margin: 28px auto; background: #fff;
+        border-radius: 24px; box-shadow: 0 16px 48px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+        /* 预留：顶部导航 64 + 自身上下外边距 56 + 页脚预留 100 → 柱高 ≈ 视口 - 220 */
+        height: calc(100vh - 220px); min-height: 720px; flex: 0 0 auto;
+        /* 让子元素里的 position:fixed 以 .site-main 为参考系（而不是 viewport），
+           使移动端底部工具条在桌面端也被正确约束到柱内 */
+        transform: translate(0, 0);
+      }
+      .site-content { background: #F5F7F6; }
+      .site-footer { display: block; }
+    }
+
+    /* ========== 超窄屏微调 ========== */
+    @media (max-width: 380px) {
+      .site-tabbar .tab { font-size: 10px; }
+    }
+
+    /* ========== Taro 组件 → HTML 适配 ========== */
+    view { display: block; }
+    text { display: inline; }
+    image { display: block; }
+    scroll-view { display: block; overflow-x: auto; white-space: nowrap; }
+    scroll-view[scroll-y] { overflow-y: auto; overflow-x: hidden; white-space: normal; }
+    button { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/main.web.js"></script>
+</body>
+</html>

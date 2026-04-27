@@ -1,0 +1,42 @@
+{
+  "name": "cloud-farm-miniapp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "云上田园 小程序 (Taro 4 + Vue 3)",
+  "scripts": {
+    "dev:weapp": "taro build --type weapp --watch",
+    "dev:h5": "taro build --type h5 --watch",
+    "web": "vite",
+    "web:build": "vite build",
+    "web:preview": "vite build && npx -y serve -p 5181 -L dist",
+    "web:deploy:cf": "vite build && npx -y wrangler@3 pages deploy dist --project-name=cloud-farm-web",
+    "build:weapp": "taro build --type weapp",
+    "build:h5": "taro build --type h5"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.24.7",
+    "@tarojs/components": "4.0.9",
+    "@tarojs/helper": "4.0.9",
+    "@tarojs/plugin-framework-vue3": "4.0.9",
+    "@tarojs/plugin-platform-h5": "4.0.9",
+    "@tarojs/plugin-platform-weapp": "4.0.9",
+    "@tarojs/router": "4.0.9",
+    "@tarojs/runtime": "4.0.9",
+    "@tarojs/shared": "4.0.9",
+    "@tarojs/taro": "4.0.9",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.7",
+    "@tarojs/cli": "4.0.9",
+    "@tarojs/vite-runner": "4.0.9",
+    "@vitejs/plugin-vue": "^4.6.2",
+    "@vitejs/plugin-vue-jsx": "^3.1.0",
+    "@vue/babel-plugin-jsx": "^1.2.2",
+    "babel-preset-taro": "4.0.9",
+    "sass": "^1.77.2",
+    "vite": "^4.5.3"
+  }
+}

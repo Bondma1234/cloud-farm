@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "miniapp-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "web", "--prefix", "apps/miniapp"],
+      "port": 5180
+    },
+    {
+      "name": "miniapp-web-prod",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "-p", "5181", "-L", "apps/miniapp/dist"],
+      "port": 5181
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+:root {
+  --color-primary: #4CA777;
+  --color-primary-dark: #2E7D32;
+  --color-primary-light: #E8F4EA;
+  --color-accent: #F4B942;
+  --color-accent-light: #FFF8E1;
+  --color-danger: #E53935;
+  --color-warning: #FB8C00;
+  --color-info: #1976D2;
+  --color-success: #43A047;
+
+  --color-text: #1B1B1B;
+  --color-text-sub: #555;
+  --color-text-mute: #999;
+  --color-text-on-dark: #FFF;
+
+  --color-bg: #F5F7F6;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #FAFBFA;
+  --color-border: #EAEAEA;
+  --color-divider: #F0F0F0;
+
+  --font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+}

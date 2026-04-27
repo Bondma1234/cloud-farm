@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.taro/
+.cache/
+apps/**/dist/
+apps/**/dist-h5/
+
+# Runtime / logs
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Claude workspace local state
+.claude/local/
+# settings.local.json 里都是当前这台 Windows 的绝对路径白名单，换机器没用
+.claude/settings.local.json

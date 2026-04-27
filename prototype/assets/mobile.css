@@ -1,0 +1,109 @@
+/* ================================================
+   Mini-Program (iPhone 13 frame 390x844)
+   ================================================ */
+body { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 40px 20px; background: #E9ECEA; }
+
+.phone {
+  width: 390px; height: 844px; background: var(--color-surface);
+  border-radius: 44px; border: 10px solid #1B1B1B; box-shadow: var(--shadow-lg);
+  position: relative; overflow: hidden;
+}
+.phone::before { /* notch */
+  content: ""; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  width: 110px; height: 28px; background: #1B1B1B; border-radius: 14px; z-index: 10;
+}
+
+.screen {
+  position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--color-bg);
+}
+
+/* Status bar */
+.status-bar {
+  height: 47px; padding: 16px 28px 0 28px; display: flex; justify-content: space-between; align-items: center;
+  font-size: 15px; font-weight: 600; color: var(--color-text); z-index: 5;
+}
+.status-bar .icons { display: flex; gap: 4px; align-items: center; }
+
+/* Nav bar (top) */
+.nav-bar {
+  height: 44px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--sp-4); background: var(--color-surface);
+  border-bottom: 1px solid var(--color-divider);
+}
+.nav-bar .title { font-size: var(--fs-lg); font-weight: 600; }
+.nav-bar button { width: 32px; height: 32px; display: grid; place-items: center; color: var(--color-text); }
+
+/* Scroll area */
+.content { flex: 1; overflow-y: auto; padding: var(--sp-3) var(--sp-4) 80px; }
+
+/* Tab bar (bottom) */
+.tab-bar {
+  height: 72px; background: var(--color-surface); border-top: 1px solid var(--color-divider);
+  display: flex; padding: 6px 0 22px;
+}
+.tab-bar .tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--color-text-mute); font-size: var(--fs-xs);
+}
+.tab-bar .tab.active { color: var(--color-primary-dark); }
+
+/* Cards */
+.card {
+  background: var(--color-surface); border-radius: var(--r-lg); padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.card-title { font-size: var(--fs-lg); font-weight: 600; margin-bottom: var(--sp-3); }
+
+/* Buttons */
+.btn {
+  padding: 12px 20px; border-radius: var(--r-pill); font-weight: 600; font-size: var(--fs-md);
+  text-align: center; transition: opacity var(--t-fast);
+}
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-primary:active { opacity: 0.85; }
+.btn-ghost { background: var(--color-primary-light); color: var(--color-primary-dark); }
+.btn-block { width: 100%; }
+
+/* Chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--r-pill); font-size: var(--fs-xs);
+  background: var(--color-primary-light); color: var(--color-primary-dark);
+}
+.chip.accent { background: var(--color-accent-light); color: #8D6E00; }
+.chip.danger { background: #FFEBEE; color: var(--color-danger); }
+
+/* Banner */
+.banner {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #3B8A61 100%);
+  color: #fff; border-radius: var(--r-xl); padding: var(--sp-5);
+  margin-bottom: var(--sp-3); position: relative; overflow: hidden;
+}
+.banner h2 { font-size: var(--fs-xl); margin-bottom: 6px; }
+.banner p { font-size: var(--fs-sm); opacity: 0.9; }
+.banner::after {
+  content: "🌱"; position: absolute; right: 20px; bottom: -10px; font-size: 80px; opacity: 0.22;
+}
+
+/* Grid items */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-3); }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: var(--sp-3); }
+
+.menu-item {
+  background: var(--color-surface); border-radius: var(--r-lg);
+  padding: var(--sp-3); display: flex; flex-direction: column; align-items: center;
+  gap: 6px; font-size: var(--fs-sm);
+}
+.menu-item .ico {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--color-primary-light); display: grid; place-items: center;
+  font-size: 22px;
+}
+
+.list-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) 0; border-bottom: 1px solid var(--color-divider);
+}
+.list-item:last-child { border-bottom: none; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--color-primary-light); display: grid; place-items: center; }
