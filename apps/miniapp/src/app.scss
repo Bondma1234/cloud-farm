@@ -10,3 +10,27 @@ page,
 }
 
 * { box-sizing: border-box; }
+
+/* ========== <scroll-view> 浏览器兜底 ==========
+   Taro 小程序里 scroll-view 是带 scroll-x / scroll-y 行为的内置组件，
+   浏览器里它只是个未知元素，不带任何滚动能力。
+   下面这两条规则让 H5 上的 <scroll-view scroll-x|scroll-y> 直接能滑。 */
+scroll-view {
+  display: block;
+}
+scroll-view[scroll-x] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  /* 隐藏滚动条，更接近小程序观感 */
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+scroll-view[scroll-y] {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
