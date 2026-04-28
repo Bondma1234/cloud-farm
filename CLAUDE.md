@@ -142,20 +142,26 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 - **新加一类 mock 图**: 加进 `public/images/`,然后**只在** `src/mock/images.js` 里加常量
 - **改全局样式**: `app.scss` 里加 token,组件里只用 `var(--xxx)`
 
-## 9. 当前进度(2026-04-27)
+## 9. 当前进度(2026-04-28)
 
 ✅ **已完成**
 
-- Batch A1: 13 个 C 端页面 + Pinia mock store + Taro shim + 17 张真图
+- **Batch A1** —— 13 个 C 端核心页面 + Pinia mock store + Taro shim + 17 张真图
+- **Batch A2** —— 4 个延伸页面:
+  - `/pages/journal` 田园动态(类型筛选 + 多图 + 点赞分享)
+  - `/pages/commands` 指令历史(顶部统计 + 类型筛选 + 状态色)
+  - `/pages/crops` 作物百科(8 种作物 + 季节筛选 + 难度星级)
+  - `/pages/photos` 田主照片墙(瀑布流/大图双模式)
+  - 入口已接到 home(田园动态)、my-plot(指令历史 / 生长日记)、profile(作物百科 / 照片墙菜单项)
 - 浏览器关键补丁: `<image>→<img>` MutationObserver + `@tap` 桥接
 - `mock/images.js` 单一来源架构
-- H5 构建 OK(57 modules,~66 KB gzip + 2.1 MB images)
+- H5 构建 OK(65 modules,~76 KB gzip JS + ~9 KB gzip CSS + 2.1 MB images)
 
 🚧 **进行中 / 待做**
 
-- 拖 `apps/miniapp/dist/` 到 Cloudflare Pages Dashboard 部署
-- Batch A2(可选): 田园动态详情、指令历史、作物百科、用户照片墙
+- Cloudflare Pages 接 GitHub 自动部署(`.nvmrc` / package-lock 都已就绪)
 - Batch A3(可选): 评价、邀请、消息、客服、设置、关于
+- 作物详情页 / 田园动态详情页(目前 crops 用 modal、journal 直接 inline 展开,够用)
 - 接真实后端(Node + 微信支付 + 海康摄像头流)
 - 上架微信小程序
 

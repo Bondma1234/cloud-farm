@@ -81,27 +81,14 @@
     <view class="section">
       <view class="sec-head">
         <text class="sec-title">田园动态</text>
+        <text class="sec-more" @tap="go('/pages/journal/index')">全部 ›</text>
       </view>
       <view class="feed">
-        <view class="feed-item">
-          <text class="feed-ico">🌸</text>
+        <view class="feed-item" v-for="f in feedPreview" :key="f.id" @tap="go('/pages/journal/index')">
+          <text class="feed-ico">{{ f.icon }}</text>
           <view class="feed-body">
-            <text class="feed-title">你的小番茄开花啦</text>
-            <text class="feed-time">2 小时前 · 点击查看照片</text>
-          </view>
-        </view>
-        <view class="feed-item">
-          <text class="feed-ico">💧</text>
-          <view class="feed-body">
-            <text class="feed-title">农技员已完成今日浇水</text>
-            <text class="feed-time">今天 08:12</text>
-          </view>
-        </view>
-        <view class="feed-item">
-          <text class="feed-ico">📦</text>
-          <view class="feed-body">
-            <text class="feed-title">你的第一批蜜薯已发货</text>
-            <text class="feed-time">昨天 17:30 · 中通快递</text>
+            <text class="feed-title">{{ f.title }}</text>
+            <text class="feed-time">{{ f.at }} · {{ f.summary }}</text>
           </view>
         </view>
       </view>
@@ -113,13 +100,15 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { PACKAGES, LIVE_ROOMS, useAppStore } from '../../stores/mock';
+import { PACKAGES, LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
 import { storeToRefs } from 'pinia';
 
 const store = useAppStore();
 const { user } = storeToRefs(store);
 const packages = PACKAGES;
 const liveRooms = LIVE_ROOMS.filter(l => l.live);
+// home 页只显示最近 3 条，全部走 /pages/journal
+const feedPreview = JOURNAL_ENTRIES.slice(0, 3);
 
 const go = url => Taro.navigateTo({ url }).catch(() => Taro.switchTab({ url }).catch(() => {}));
 const goDetail = id => Taro.navigateTo({ url: `/pages/package-detail/index?id=${id}` });

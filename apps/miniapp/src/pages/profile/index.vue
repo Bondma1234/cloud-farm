@@ -136,11 +136,11 @@ const filteredOrders = computed(() => {
 
 const menus = [
   { key: 'addr',        icon: '📍', label: '地址管理' },
-  { key: 'fav',         icon: '⭐', label: '我的收藏' },
+  { key: 'crops',       icon: '🌾', label: '作物百科' },
+  { key: 'photos',      icon: '📷', label: '照片墙' },
   { key: 'coupon',      icon: '🎟️', label: '优惠券' },
   { key: 'invite',      icon: '👥', label: '邀请好友' },
   { key: 'enterprise',  icon: '🏢', label: '企业合作' },
-  { key: 'edu',         icon: '🎓', label: '自然教育' },
   { key: 'help',        icon: '❓', label: '帮助中心' },
   { key: 'contact',     icon: '💬', label: '联系我们' }
 ];
@@ -173,11 +173,11 @@ const onMenu = (m) => {
   const nav = (url) => Taro.navigateTo({ url }).catch(() => Taro.showToast({ title: m.label, icon: 'none' }));
   switch (m.key) {
     case 'addr':       return nav('/pages/address/index');
-    case 'fav':        return Taro.showToast({ title: '我的收藏（待开放）', icon: 'none' });
+    case 'crops':      return nav('/pages/crops/index');
+    case 'photos':     return nav('/pages/photos/index');
     case 'coupon':     return Taro.showToast({ title: '优惠券（待开放）', icon: 'none' });
     case 'invite':     return Taro.showToast({ title: '邀请好友（待开放）', icon: 'none' });
     case 'enterprise': return Taro.showToast({ title: '企业合作咨询 400-8888-666', icon: 'none' });
-    case 'edu':        return Taro.showToast({ title: '自然教育（待开放）', icon: 'none' });
     case 'help':       return Taro.showToast({ title: '帮助中心（待开放）', icon: 'none' });
     case 'contact':    return Taro.showToast({ title: '客服 400-8888-666', icon: 'none' });
     default:           return Taro.showToast({ title: m.label, icon: 'none' });

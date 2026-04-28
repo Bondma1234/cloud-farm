@@ -41,7 +41,7 @@
     <view class="block">
       <view class="block-h">
         <text class="block-t">田间操作</text>
-        <text class="block-d">指令会推送到农技员，完成后自动回传照片</text>
+        <text class="block-more" @tap="goCommands">指令历史 ›</text>
       </view>
       <view class="cmd-grid">
         <view class="cmd" v-for="c in commands" :key="c.key" @tap="sendCmd(c)">
@@ -58,7 +58,7 @@
     <view class="block">
       <view class="block-h">
         <text class="block-t">生长日记</text>
-        <text class="block-more" @tap="noop">查看全部</text>
+        <text class="block-more" @tap="goJournal">查看全部</text>
       </view>
       <view class="timeline">
         <view class="tl-item" v-for="(it, i) in plot.growthLog" :key="i">
@@ -91,9 +91,9 @@
           <text class="h-n">约 8 斤</text>
           <text class="h-l">预估产量</text>
         </view>
-        <view class="h-stat">
-          <text class="h-n">1 次</text>
-          <text class="h-l">已使用指令</text>
+        <view class="h-stat" @tap="goCommands">
+          <text class="h-n">6 次</text>
+          <text class="h-l">已使用指令 ›</text>
         </view>
       </view>
     </view>
@@ -122,7 +122,8 @@ const sendCmd = c => {
 };
 const ptz = dir => Taro.showToast({ title: `摄像头 ${dir}`, icon: 'none' });
 const openLive = () => Taro.navigateTo({ url: `/pages/live/index?id=live-001` });
-const noop = () => Taro.showToast({ title: '完整日记（mock）', icon: 'none' });
+const goJournal = () => Taro.navigateTo({ url: '/pages/journal/index' });
+const goCommands = () => Taro.navigateTo({ url: '/pages/commands/index' });
 </script>
 
 <style lang="scss" scoped>
