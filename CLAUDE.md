@@ -5,11 +5,13 @@
 
 ## 1. 项目定位
 
-**云上田园 · 河南云农场** —— 面向北上广深一线城市消费者,提供"远程认养 + 24h 慢直播 + 农产品直送"的沉浸式云种植服务。完整定位、市场分析、商业模式、6 个月路线图见仓库根目录:
+**云上田园 · 河南云农场** —— 面向北上广深一线城市消费者,提供"远程认养 + 摄像头远程监控 + 农产品直送"的沉浸式云种植服务。完整定位、市场分析、商业模式、6 个月路线图见仓库根目录:
 
 - `01_云上田园_项目书_v2.docx` / `.md` —— 商业计划书
 - `02_云上田园_需求说明书_v1.docx` / `.md` —— 需求清单
-- `03_云上田园_软件架构图_v1.docx` / `.md` —— 软件架构
+- **`03_云上田园_软件架构图_v2.md`** —— 软件架构(**当前版本**,v1 已 superseded)
+
+⚠️ **关键澄清**:摄像头是**用户私有监控**,**不是直播** —— 1 个摄像头对应 1 个用户(他自己看自己的地块),没有"1 推流 N 观众"那种并发。这一点 v1 架构文档曾经写错,v2 已纠正。
 
 核心套餐(同时也是 mock 数据的依据):
 
@@ -21,16 +23,36 @@
 
 ## 2. 仓库结构
 
+### 当前(2026-04-28)
+
 ```
 Cloud_Farm_project/
-├── apps/miniapp/             # Taro 4 + Vue 3 小程序 + H5 源码(主战场)
+├── apps/miniapp/             # Taro 4 + Vue 3 小程序 + H5(当前唯一的 app)
 ├── prototype/                # 早期纯 HTML/CSS 原型(可参考视觉)
 ├── diagrams/                 # 架构图 svg/png
-├── 01_..._项目书_v2.docx     # 三份正式文档(docx + md 双份)
-├── 02_..._需求说明书_v1.docx
-├── 03_..._软件架构图_v1.docx
-└── CLAUDE.md                 # 本文件
+├── 01..03_*.docx / .md       # 项目书 / 需求 / 架构(架构以 v2.md 为准)
+├── CLAUDE.md / README.md
 ```
+
+### 目标(架构 v2,逐步迁移)
+
+```
+Cloud_Farm_project/
+├── apps/
+│   ├── miniapp/              # Taro 4 + Vue 3            微信小程序
+│   ├── web/         🚧       # Vue 3 + Vite              C 端 Web Portal
+│   ├── admin/       🚧       # Vue 3 + Element Plus      B 端后台
+│   └── api/         🚧       # NestJS + Prisma           后端服务
+├── packages/        🚧
+│   ├── shared/               # TS 类型 + 业务常量 + 纯函数
+│   ├── ui-tokens/            # 设计 token (CSS 变量)
+│   └── api-client/           # 自动生成的 API SDK
+├── docker-compose.yml 🚧     # 本地起 MySQL + Redis
+├── pnpm-workspace.yaml 🚧
+└── 文档与现状同上
+```
+
+🚧 表示尚未建立,见 §9 当前进度 + 架构 v2 §10 演进路线。
 
 `apps/miniapp/` 内部:
 
@@ -94,7 +116,17 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 
 **修复**: `main.web.js` 里同时监听 `click`(桌面)和 `touchend`(移动),用位移 ≤10px + 时长 ≤800ms 过滤滑动/长按,400ms 去重避免双触发。**所有页面写 `@tap` 即可,不用关心平台**。
 
-### 4.3 图片 URL 必须经过 `src/mock/images.js`
+### 4.3 浏览器里 `<scroll-view scroll-x>` 不能滑 —— 双层修
+
+**问题 1**: Taro `<scroll-view>` 是内置组件,浏览器里只是未知元素,没 `overflow` 行为。
+
+**修复 1(CSS)**: `app.scss` 全局规则给 `scroll-view[scroll-x]` 加 `overflow-x: auto + white-space: nowrap`,移动端 touch 滑动直接生效。
+
+**问题 2**: 桌面浏览器默认鼠标滚轮不滚横向、也不能拖卡片。
+
+**修复 2(JS)**: `main.web.js` 里给所有 `scroll-view[scroll-x]` 加桌面增强 —— 鼠标滚轮 deltaY → scrollLeft、鼠标按住拖拽跟手、拖拽 >5px 后拦截后续 click 避免误触。
+
+### 4.4 图片 URL 必须经过 `src/mock/images.js`
 
 所有 mock 图片都从 `public/images/xxx.jpg` 出。**绝对不要**在组件里写 `'/images/xxx.jpg'` 字面量,而是 `import { PKG_COVER, CROP, FARM, LIVE, MISC } from '@/mock/images'` 然后用 `PKG_COVER.basic` 这种引用。
 
@@ -102,7 +134,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 
 `images.js` 还导出 `fallbackImage(emoji, palette)` 和预制的 `FB.{pkg,crop,live,farm,ship}` —— 任何 `<image>` 加载失败都用 emoji + 渐变色兜底。
 
-### 4.4 Taro shim 在浏览器里的覆盖范围
+### 4.5 Taro shim 在浏览器里的覆盖范围
 
 `src/shims/taro.js` 通过 `vite.config.js` 的 alias 顶替 `@tarojs/taro`。已实现:
 
@@ -153,17 +185,22 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - `/pages/crops` 作物百科(8 种作物 + 季节筛选 + 难度星级)
   - `/pages/photos` 田主照片墙(瀑布流/大图双模式)
   - 入口已接到 home(田园动态)、my-plot(指令历史 / 生长日记)、profile(作物百科 / 照片墙菜单项)
-- 浏览器关键补丁: `<image>→<img>` MutationObserver + `@tap` 桥接
+- 浏览器关键补丁: `<image>→<img>` MutationObserver + `@tap` 桥接 + `<scroll-view>` 桌面滚轮/拖拽增强
 - `mock/images.js` 单一来源架构
 - H5 构建 OK(65 modules,~76 KB gzip JS + ~9 KB gzip CSS + 2.1 MB images)
+- **架构 v2 文档**(2026-04-28)—— 拆分为 4 apps + 3 packages,删除"直播"概念,定型 NestJS + Prisma + 萤石云
 
-🚧 **进行中 / 待做**
+🚧 **下一步路线**(架构 v2 §10)
 
-- Cloudflare Pages 接 GitHub 自动部署(`.nvmrc` / package-lock 都已就绪)
-- Batch A3(可选): 评价、邀请、消息、客服、设置、关于
-- 作物详情页 / 田园动态详情页(目前 crops 用 modal、journal 直接 inline 展开,够用)
-- 接真实后端(Node + 微信支付 + 海康摄像头流)
-- 上架微信小程序
+| 阶段 | 内容 | 当前状态 |
+|---|---|---|
+| **P1 架构地基** | pnpm workspace + docker-compose + apps/api/admin 空项目 + packages/shared | 待开始 |
+| **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | 待 P1 |
+| **P3 Admin 最小切口** | 登录 + 套餐 CRUD | 待 P2 |
+| **P4 miniapp 接 API** | 替换 mock.js 为真实接口 | 待 P3 |
+| **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
+| **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
+| 旁路任务 | Cloudflare Pages 接 Git 自动部署 | 已搭好基建(.nvmrc / lockfile),用户暂选手动拖 |
 
 ## 10. 关于 Claude Code 自身
 
