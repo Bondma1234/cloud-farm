@@ -218,6 +218,77 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// ============ <scroll-view scroll-x> 桌面增强（浏览器预览专用）============
+// CSS 的 overflow-x: auto 在手机上点一下就能滑，但桌面浏览器默认：
+//   - 鼠标滚轮只走 deltaY（垂直），不会转成横向
+//   - 没法直接拖动卡片让容器滚（不像 swiper）
+// 下面给所有 <scroll-view scroll-x> 加：
+//   1) 滚轮 deltaY → 转成 scrollLeft，桌面用户感觉"自然"
+//   2) 鼠标按住拖拽 → 跟手滑动，且拖拽距离 >5px 时拦截后续 click，避免误触发卡片 @tap
+if (typeof window !== 'undefined') {
+  const enhanceScrollX = (el) => {
+    if (el.__sxEnhanced) return;
+    el.__sxEnhanced = true;
+
+    // 滚轮 → 横向
+    el.addEventListener('wheel', (e) => {
+      // 只有内容真的溢出时才接管
+      if (el.scrollWidth <= el.clientWidth) return;
+      // 用户已经按 shift 自己横滚，不重复处理
+      if (e.shiftKey) return;
+      // 优先用 deltaY（普通滚轮），如果 deltaX 已经有就用它
+      const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (dx === 0) return;
+      el.scrollLeft += dx;
+      e.preventDefault();
+    }, { passive: false });
+
+    // 拖拽 → 跟手
+    let dragging = false, startX = 0, startScroll = 0, moved = 0;
+    el.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      startX = e.clientX;
+      startScroll = el.scrollLeft;
+      moved = 0;
+      el.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      moved = Math.max(moved, Math.abs(dx));
+      el.scrollLeft = startScroll - dx;
+    });
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      el.style.cursor = '';
+    });
+    // 拖拽 >5px 后的 click 被拦掉，避免误触卡片
+    el.addEventListener('click', (e) => {
+      if (moved > 5) { e.stopPropagation(); e.preventDefault(); moved = 0; }
+    }, true);
+  };
+
+  const scanSx = (root) => {
+    if (root.tagName === 'SCROLL-VIEW' && root.hasAttribute('scroll-x')) enhanceScrollX(root);
+    root.querySelectorAll && root.querySelectorAll('scroll-view[scroll-x]').forEach(enhanceScrollX);
+  };
+
+  // 初次 + 持续监听
+  const startSx = () => {
+    scanSx(document);
+    new MutationObserver(muts => {
+      for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) scanSx(n);
+    }).observe(document.body, { childList: true, subtree: true });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startSx, { once: true });
+  } else {
+    startSx();
+  }
+}
+
 const app = createApp(SiteShell);
 app.use(createPinia());
 app.use(router);
