@@ -425,9 +425,9 @@ async function convert(mdPath, docxPath, title) {
   const base = 'C:/TestProject/Cloud_Farm_project/';
   const args = process.argv.slice(2);
   const targets = [
-    ['01_云上田园_项目书_v2', '云上田园 · 项目商业计划书 v2.0'],
-    ['02_云上田园_需求说明书_v1', '云上田园 · 产品需求说明书 v1.0'],
-    ['03_云上田园_软件架构图_v1', '云上田园 · 软件架构设计文档 v1.0'],
+    ['01_云上田园_项目书_v3', '云上田园 · 项目商业计划书 v3.0'],
+    ['02_云上田园_需求说明书_v2', '云上田园 · 产品需求说明书 v2.0'],
+    ['03_云上田园_软件架构图_v2', '云上田园 · 软件架构设计文档 v2.0'],
   ];
   for (const [name, title] of targets) {
     if (args.length && !args.some(a => name.includes(a))) continue;
