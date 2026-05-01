@@ -1,5 +1,35 @@
 {
+  "name": "cloud-farm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "云上田园 monorepo (miniapp + web + admin + api)",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev:miniapp": "pnpm --filter cloud-farm-miniapp run web",
+    "dev:admin": "pnpm --filter cloud-farm-admin run dev",
+    "dev:api": "pnpm --filter cloud-farm-api run start:dev",
+    "build:miniapp": "pnpm --filter cloud-farm-miniapp run web:build",
+    "build:admin": "pnpm --filter cloud-farm-admin run build",
+    "build:api": "pnpm --filter cloud-farm-api run build",
+    "build:all": "pnpm -r --parallel run build",
+    "docs:gen": "node md_to_docx.js"
+  },
   "dependencies": {
     "docx": "^9.6.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@parcel/watcher",
+      "@swc/core",
+      "@tarojs/binding",
+      "core-js",
+      "core-js-pure",
+      "esbuild",
+      "vue-demi"
+    ]
   }
 }

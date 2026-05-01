@@ -1,0 +1,50 @@
+# ============ 云上田园 本地开发环境 ============
+# 一键起 MySQL + Redis,P2 起后端会连这两个。
+# 用法:
+#   docker compose up -d         # 后台启动
+#   docker compose down          # 停止 + 删容器(数据保留在 volume)
+#   docker compose down -v       # 停止 + 删容器 + 删数据(慎用)
+# 数据持久化在本机 volume,删容器不丢数据。
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: cloud-farm-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: cloud_farm
+      MYSQL_USER: farmer
+      MYSQL_PASSWORD: farm123
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'farmer', '-pfarm123']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: cloud-farm-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: ['redis-server', '--appendonly', 'yes']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mysql_data:
+  redis_data:

@@ -1,0 +1,22 @@
+{
+  "name": "@cloud-farm/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "云上田园 共享包: TS 类型 + 业务常量 + 纯函数,三端共用",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts",
+    "./constants": "./src/constants/index.ts",
+    "./utils": "./src/utils/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

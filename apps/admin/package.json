@@ -1,0 +1,29 @@
+{
+  "name": "cloud-farm-admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "云上田园 B 端后台 (Vue 3 + Element Plus)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.10",
+    "vue-router": "^4.4.5",
+    "pinia": "^2.2.4",
+    "element-plus": "^2.8.4",
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@vue/tsconfig": "^0.5.1",
+    "typescript": "^5.5.4",
+    "unplugin-auto-import": "^0.18.3",
+    "unplugin-vue-components": "^0.27.4",
+    "vite": "^5.4.8",
+    "vue-tsc": "^2.1.6"
+  }
+}

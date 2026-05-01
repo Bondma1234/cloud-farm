@@ -24,36 +24,60 @@
 
 ## 2. 仓库结构
 
-### 当前(2026-04-28)
-
-```
-Cloud_Farm_project/
-├── apps/miniapp/             # Taro 4 + Vue 3 小程序 + H5(当前唯一的 app)
-├── prototype/                # 早期纯 HTML/CSS 原型(可参考视觉)
-├── diagrams/                 # 架构图 svg/png
-├── 01..03_*.docx / .md       # 项目书 / 需求 / 架构(架构以 v2.md 为准)
-├── CLAUDE.md / README.md
-```
-
-### 目标(架构 v2,逐步迁移)
+### 当前(2026-05-01,P1 完成)
 
 ```
 Cloud_Farm_project/
 ├── apps/
-│   ├── miniapp/              # Taro 4 + Vue 3            微信小程序
-│   ├── web/         🚧       # Vue 3 + Vite              C 端 Web Portal
-│   ├── admin/       🚧       # Vue 3 + Element Plus      B 端后台
-│   └── api/         🚧       # NestJS + Prisma           后端服务
-├── packages/        🚧
-│   ├── shared/               # TS 类型 + 业务常量 + 纯函数
-│   ├── ui-tokens/            # 设计 token (CSS 变量)
-│   └── api-client/           # 自动生成的 API SDK
-├── docker-compose.yml 🚧     # 本地起 MySQL + Redis
-├── pnpm-workspace.yaml 🚧
-└── 文档与现状同上
+│   ├── miniapp/              # Taro 4 + Vue 3              微信小程序 + H5(主战场,17 页 mock)
+│   ├── api/        ★ P1      # NestJS 10 + ConfigModule    后端 (跑通 /api/health)
+│   ├── admin/      ★ P1      # Vue 3 + Vite + Element Plus B 端后台 (登录页 + 工作台壳)
+│   └── web/         🚧 P6     # Vue 3 + Vite                C 端 Web Portal (待 P6 拆)
+├── packages/
+│   ├── shared/     ★ P1      # TS 类型 + 业务常量 + 纯函数
+│   ├── ui-tokens/   🚧        # 设计 token(目前在 miniapp/app.scss,P6 拆出来)
+│   └── api-client/  🚧        # 自动生成的 API SDK(P2 起,从 NestJS Swagger 生成)
+├── docker-compose.yml ★ P1   # MySQL 8 + Redis 7(可选)
+├── pnpm-workspace.yaml ★ P1
+├── package.json              # 根 monorepo 配置 + 顶层 dev/build 脚本
+├── prototype/                # 早期纯 HTML/CSS 原型(可参考视觉)
+├── diagrams/                 # 架构图 svg/png
+├── 01..03_*.docx / .md       # 项目书 / 需求 / 架构(项目书 v3、需求 v2、架构 v2 是当前)
+├── md_to_docx.js             # md → docx 转换(node md_to_docx.js)
+└── CLAUDE.md / README.md
 ```
 
-🚧 表示尚未建立,见 §9 当前进度 + 架构 v2 §10 演进路线。
+★ = P1 阶段已建立  🚧 = 待后续阶段建立
+
+### 顶层 npm 脚本(根目录跑)
+
+```bash
+pnpm install            # 一次装好所有 app 的依赖
+pnpm dev:miniapp        # 起 miniapp H5 (5180)
+pnpm dev:admin          # 起 admin (5183)
+pnpm dev:api            # 起 api (3000) — 需先 docker compose up 启 MySQL
+pnpm build:all          # 全部 app 并行 build
+pnpm docs:gen           # 重新生成 3 份 docx
+```
+
+### 本地全栈启动顺序
+
+```bash
+# 1. 装依赖(首次或拉新)
+pnpm install
+
+# 2. 起数据库(后台进程)
+docker compose up -d            # MySQL:3306, Redis:6379
+
+# 3. 起后端
+pnpm dev:api                    # http://localhost:3000/api/health
+
+# 4. (另开终端)起 admin
+pnpm dev:admin                  # http://localhost:5183 (代理 /api → :3000)
+
+# 5. (另开终端)起 miniapp H5
+pnpm dev:miniapp                # http://localhost:5180
+```
 
 `apps/miniapp/` 内部:
 
@@ -175,33 +199,36 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 - **新加一类 mock 图**: 加进 `public/images/`,然后**只在** `src/mock/images.js` 里加常量
 - **改全局样式**: `app.scss` 里加 token,组件里只用 `var(--xxx)`
 
-## 9. 当前进度(2026-04-28)
+## 9. 当前进度(2026-05-01)
 
 ✅ **已完成**
 
 - **Batch A1** —— 13 个 C 端核心页面 + Pinia mock store + Taro shim + 17 张真图
-- **Batch A2** —— 4 个延伸页面:
-  - `/pages/journal` 田园动态(类型筛选 + 多图 + 点赞分享)
-  - `/pages/commands` 指令历史(顶部统计 + 类型筛选 + 状态色)
-  - `/pages/crops` 作物百科(8 种作物 + 季节筛选 + 难度星级)
-  - `/pages/photos` 田主照片墙(瀑布流/大图双模式)
-  - 入口已接到 home(田园动态)、my-plot(指令历史 / 生长日记)、profile(作物百科 / 照片墙菜单项)
+- **Batch A2** —— 4 个延伸页面:journal / commands / crops / photos
+  - 入口已接到 home / my-plot / profile
 - 浏览器关键补丁: `<image>→<img>` MutationObserver + `@tap` 桥接 + `<scroll-view>` 桌面滚轮/拖拽增强
 - `mock/images.js` 单一来源架构
 - H5 构建 OK(65 modules,~76 KB gzip JS + ~9 KB gzip CSS + 2.1 MB images)
-- **架构 v2 文档**(2026-04-28)—— 拆分为 4 apps + 3 packages,删除"直播"概念,定型 NestJS + Prisma + 萤石云
+- **三份正式文档**(项目书 v3 / 需求 v2 / 架构 v2),md + docx 双份
+- **★ P1 架构地基(本次)** ——
+  - pnpm workspace 落地,4 apps + 1 package 全部跑通
+  - apps/api: NestJS 10 + ConfigModule,`GET /api/health` 通过
+  - apps/admin: Vue 3 + Vite + Element Plus,登录页 + 工作台壳子能跑
+  - packages/shared: TS 类型 + 业务常量 + 纯函数(从 mock.js 抽出来)
+  - docker-compose.yml: MySQL 8 + Redis 7
+  - 三个 app 都能 build 通过,miniapp 在 pnpm 下不变 65 modules
 
 🚧 **下一步路线**(架构 v2 §10)
 
 | 阶段 | 内容 | 当前状态 |
 |---|---|---|
-| **P1 架构地基** | pnpm workspace + docker-compose + apps/api/admin 空项目 + packages/shared | 待开始 |
-| **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | 待 P1 |
+| **P1 架构地基** | pnpm workspace + docker-compose + apps/api/admin 空项目 + packages/shared | ✅ 已完成 |
+| **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | 待开始 |
 | **P3 Admin 最小切口** | 登录 + 套餐 CRUD | 待 P2 |
 | **P4 miniapp 接 API** | 替换 mock.js 为真实接口 | 待 P3 |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
-| 旁路任务 | Cloudflare Pages 接 Git 自动部署 | 已搭好基建(.nvmrc / lockfile),用户暂选手动拖 |
+| 旁路任务 | Cloudflare Pages 接 Git 自动部署 | 已搭好基建,暂手动拖 |
 
 ## 10. 关于 Claude Code 自身
 
