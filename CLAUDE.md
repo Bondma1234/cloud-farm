@@ -242,16 +242,29 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - 全局基础设施:ValidationPipe / TransformInterceptor({code,message,data}) / AllExceptionsFilter / CORS
   - Swagger 文档接入 `/api/docs`
   - 冒烟通过:`GET /api/packages` 返回真实 DB 数据
-- **★ P2+B Admin 端到端打通(本次)** ——
-  - **packages/api-client** 落地 ★(axios + 拦截器 + Package API + ApiError 类型)
-    - 自动解开后端 `{code, message, data}` envelope,业务代码拿到的就是 data
+- **P2+B Admin 端到端打通** ——
+  - **packages/api-client** 落地(axios + 拦截器 + Package API + ApiError 类型)
+    - 自动解开后端 `{code, message, data}` envelope
     - 类型从 `@cloud-farm/shared` 来,前后端类型同源
-    - admin / miniapp / web 三端共享,P4 miniapp 接 API 时直接复用
-  - Admin 抽公共布局组件 `AdminAside` / `AdminHeader`(供后续多页面复用)
-  - Admin Dashboard 顶部"上架套餐"卡片改拉 `listPackages()`,真实显示 **3**
-  - Admin 新增 `/packages` 套餐管理页,Element Plus Table 展示真实 3 条数据(封面/名称/面积/价格/标签/作物/状态)
-  - Vite 代理 `/api → :3000` 自动转发,无 CORS 问题
-  - 端到端验收:登录 → Dashboard 显示真实 3 套餐 → 点 sidebar 进 /packages → Table 显示完整数据
+    - admin / miniapp / web 三端共享
+  - Admin 抽公共布局组件 `AdminAside` / `AdminHeader`
+  - Admin Dashboard 顶部"上架套餐"卡片改拉真实数据
+  - Admin 新增 `/packages` Element Plus Table 套餐管理页
+  - Vite 代理 `/api → :3000`
+- **★ P4-C miniapp 接 API + Mock 兜底(本次)** ——
+  - miniapp 加 `@cloud-farm/api-client` + `@cloud-farm/shared` workspace 依赖
+  - **新建 `apps/miniapp/src/stores/packages.js`**(Pinia store):
+    - `fetch()` action: 调 `listPackages()` 拉真实数据,失败 fallback 到 `MOCK_PACKAGES`
+    - `source` 字段标记数据来源:`'api'` / `'mock-fallback'` / `'init'`
+    - 60 秒缓存,避免重复请求
+  - 改造 4 个页面从 `PACKAGES` 常量切换为 store:home / packages / package-detail / checkout
+  - **packages 页加 mock 兜底警告条**:API 挂了时显示 ⚠️ 提示 + 点击重试
+  - vite.config.js 加 proxy `/api → :3000`(同 admin 模式)
+  - **三态闭环验收**:
+    - API 在线 → 真数据,无警告 ✅
+    - API 挂了 → mock 兜底,黄色警告条 ✅
+    - API 恢复 → 重试/刷新自动切真数据 ✅
+  - H5 build OK(119 modules,加 axios 后 +54)
 
 🚧 **下一步路线**(架构 v2 §10)
 
@@ -260,9 +273,10 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P1 架构地基** | pnpm workspace + docker-compose + apps/api/admin 空项目 + packages/shared | ✅ 已完成 |
 | **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | ✅ 已完成 |
 | **P2+B Admin 端到端打通** | packages/api-client + Admin 显示真实套餐 | ✅ 已完成 |
+| **P4-C miniapp 套餐接 API** | home / packages / package-detail / checkout 走真 API + mock 兜底 | ✅ 已完成 |
 | **P2+ API 扩展** | 加 User/Order/Plot/Camera 等模块,登录 / JWT / 业务 CRUD | 待开始 |
 | **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理 | 待 P2+ |
-| **P4 miniapp 接 API** | 替换 mock.js 为真实接口 | 待 P3 |
+| **P4+ miniapp 其余模块接 API** | 订单 / 我的田 / 动态 / 摄像头 等其余 mock 模块 | 待 P2+ |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |

@@ -96,11 +96,21 @@
 
 <script setup>
 import Taro, { useRouter } from '@tarojs/taro';
-import { computed } from 'vue';
-import { PACKAGES } from '../../stores/mock';
+import { computed, onMounted } from 'vue';
+import { usePackageStore } from '../../stores/packages';
+import { PACKAGES as MOCK_PACKAGES } from '../../stores/mock';
 
 const router = useRouter();
-const pkg = computed(() => PACKAGES.find(p => p.id === router.params.id) || PACKAGES[0]);
+const pkgStore = usePackageStore();
+
+// store 没数据时(直接深链进来)兜底用 mock
+const pkg = computed(() => {
+  const id = router.params.id;
+  const list = pkgStore.list.length ? pkgStore.list : MOCK_PACKAGES;
+  return list.find(p => p.id === id) || list[0];
+});
+
+onMounted(() => pkgStore.fetch());
 
 const cropEmoji = name => ({
   红薯: '🍠', 胡萝卜: '🥕', 土豆: '🥔', 南瓜: '🎃',

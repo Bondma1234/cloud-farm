@@ -100,12 +100,18 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { PACKAGES, LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
+import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
+import { LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
+import { usePackageStore } from '../../stores/packages';
 
 const store = useAppStore();
 const { user } = storeToRefs(store);
-const packages = PACKAGES;
+
+// P4: 套餐走 store(后端真 API + mock 兜底), 不再直接 import PACKAGES
+const pkgStore = usePackageStore();
+const { list: packages } = storeToRefs(pkgStore);
+
 const liveRooms = LIVE_ROOMS.filter(l => l.live);
 // home 页只显示最近 3 条，全部走 /pages/journal
 const feedPreview = JOURNAL_ENTRIES.slice(0, 3);
@@ -113,6 +119,8 @@ const feedPreview = JOURNAL_ENTRIES.slice(0, 3);
 const go = url => Taro.navigateTo({ url }).catch(() => Taro.switchTab({ url }).catch(() => {}));
 const goDetail = id => Taro.navigateTo({ url: `/pages/package-detail/index?id=${id}` });
 const goLive = id => Taro.navigateTo({ url: `/pages/live/index?id=${id}` });
+
+onMounted(() => pkgStore.fetch());
 </script>
 
 <style lang="scss" scoped>

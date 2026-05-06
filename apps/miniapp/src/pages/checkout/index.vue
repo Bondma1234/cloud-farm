@@ -70,11 +70,18 @@
 
 <script setup>
 import Taro, { useRouter } from '@tarojs/taro';
-import { computed, ref } from 'vue';
-import { PACKAGES } from '../../stores/mock';
+import { computed, onMounted, ref } from 'vue';
+import { usePackageStore } from '../../stores/packages';
+import { PACKAGES as MOCK_PACKAGES } from '../../stores/mock';
 
 const router = useRouter();
-const pkg = computed(() => PACKAGES.find(p => p.id === router.params.pkg) || PACKAGES[1]);
+const pkgStore = usePackageStore();
+const pkg = computed(() => {
+  const list = pkgStore.list.length ? pkgStore.list : MOCK_PACKAGES;
+  return list.find(p => p.id === router.params.pkg) || list[1] || list[0];
+});
+
+onMounted(() => pkgStore.fetch());
 const plot = ref(router.params.plot || 'P-A-07');
 const stake = ref('小祎的菜园');
 const pickedCrops = ref(['小番茄']);

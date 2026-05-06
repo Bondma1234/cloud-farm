@@ -20,7 +20,19 @@ export default defineConfig({
       }
     })
   ],
-  server: { port: 5180, host: '0.0.0.0', open: false },
+  server: {
+    port: 5180,
+    host: '0.0.0.0',
+    open: false,
+    // P4: H5 调用 /api/* 时走 vite proxy 转发到后端
+    // 微信小程序模式下不走这条,小程序内置 wx.request 直连(P5+ 适配)
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
   resolve: {
     alias: {
       '@tarojs/taro': path.resolve(__dirname, 'src/shims/taro.js')

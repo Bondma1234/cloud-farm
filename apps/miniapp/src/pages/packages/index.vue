@@ -1,5 +1,10 @@
 <template>
   <view class="page">
+    <!-- mock 兜底提示(后端没起的时候显示) -->
+    <view v-if="store.isMockFallback" class="api-warn" @tap="retry">
+      <text>⚠️ 后端未连接,显示离线 mock 数据 · 点这里重试</text>
+    </view>
+
     <view class="filter">
       <view
         v-for="f in filters"
@@ -8,6 +13,10 @@
         @tap="active = f.key">
         {{ f.label }}
       </view>
+    </view>
+
+    <view v-if="store.loading && !store.list.length" class="loading">
+      <text>加载中…</text>
     </view>
 
     <view class="list">
@@ -44,8 +53,12 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { computed, ref } from 'vue';
-import { PACKAGES } from '../../stores/mock';
+import { computed, onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { usePackageStore } from '../../stores/packages';
+
+const store = usePackageStore();
+const { list } = storeToRefs(store);
 
 const filters = [
   { key: 'all', label: '全部' },
@@ -55,13 +68,33 @@ const filters = [
 ];
 const active = ref('all');
 const filtered = computed(() =>
-  active.value === 'all' ? PACKAGES : PACKAGES.filter(p => p.id === active.value)
+  active.value === 'all' ? list.value : list.value.filter(p => p.id === active.value)
 );
 const goDetail = id => Taro.navigateTo({ url: `/pages/package-detail/index?id=${id}` });
+
+const retry = async () => {
+  Taro.showLoading?.({ title: '重试中…' });
+  await store.fetch({ force: true });
+  Taro.hideLoading?.();
+  Taro.showToast?.({
+    title: store.isMockFallback ? '后端仍未响应' : '已切到真实数据',
+    icon: store.isMockFallback ? 'none' : 'success'
+  });
+};
+
+onMounted(() => store.fetch());
 </script>
 
 <style lang="scss" scoped>
 .page { padding: 12px 0 32px; }
+
+.api-warn {
+  margin: 0 16px 12px; padding: 8px 12px; border-radius: 8px;
+  background: #FFF7E6; color: #8D6E00; font-size: 12px;
+  border: 1px solid #F2C94C; text-align: center;
+}
+
+.loading { text-align: center; padding: 24px 0; color: var(--color-text-mute); font-size: 13px; }
 
 .filter { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
 .chip {
