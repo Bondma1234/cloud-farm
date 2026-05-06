@@ -3,8 +3,6 @@
 //   - 成功 (code=0): 拦截器解包,调用方拿到的就是 data,体验跟普通 axios 一样
 //   - 业务错误 (code!=0): 抛出 ApiError,带上 code 和 message
 //   - 网络/HTTP 错误: 同样转 ApiError,统一异常类型
-//
-// 调用方只用关心 try/catch ApiError,不用判断 res.data.code 这种重复劳动
 
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
@@ -59,22 +57,17 @@ export function createHttpClient(opts: CreateClientOptions = {}): AxiosInstance 
   instance.interceptors.response.use(
     (res) => {
       const body = res.data as unknown;
-      // 如果后端按协议返回了 envelope
       if (body && typeof body === 'object' && 'code' in body && 'data' in body) {
         const env = body as ApiEnvelope<unknown>;
         if (env.code === 0) {
-          // 把 data 直接放回 res.data,后续调用方拿到的就是 data
           (res as { data: unknown }).data = env.data;
           return res;
         }
-        // 业务错误
         throw new ApiError(env.message || `业务错误 (code=${env.code})`, env.code, body);
       }
-      // 不符合 envelope 协议(理论上不该走到这,/api/docs 等非接口路径除外),原样返回
       return res;
     },
     (err) => {
-      // 网络层错误 / HTTP 4xx/5xx
       const data = err?.response?.data;
       if (data && typeof data === 'object' && 'code' in data) {
         const env = data as ApiEnvelope<unknown>;
@@ -88,25 +81,65 @@ export function createHttpClient(opts: CreateClientOptions = {}): AxiosInstance 
   return instance;
 }
 
-/** 默认实例(浏览器跑时直接用) */
-export const http = createHttpClient();
+// ============ 默认实例 + 内置 token 管理 ============
+// 大部分调用方只用默认实例就够; 如果需要多套并存(比如 admin 和 miniapp 分账号
+// 调试)再用 createHttpClient() 自建实例。
+//
+// token 存在内存 + localStorage(浏览器场景),刷新页面自动恢复。
+// 小程序 P5+ 时,如果跑在微信小程序里,需要换成 wx.getStorageSync,
+// 这里在初始化阶段做了 typeof 检测,跑得起来,只是不持久化。
 
-/** 给 admin 这种端用,业务代码不直接调 axios,而是封装成函数 */
+const TOKEN_STORAGE_KEY = 'cloud-farm:access-token';
+
+let memoryToken: string | null = null;
+function readPersistedToken(): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+function writePersistedToken(token: string | null) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    if (token) localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    else localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    /* localStorage 满 / 隐私模式 */
+  }
+}
+memoryToken = readPersistedToken();
+
+/** 设置/清空当前 access token,会同时写到 localStorage */
+export function setAccessToken(token: string | null) {
+  memoryToken = token;
+  writePersistedToken(token);
+}
+
+/** 读取当前 access token(主要给业务层判断"是否登录"用) */
+export function getAccessToken(): string | null {
+  return memoryToken;
+}
+
+/** 默认 axios 实例,业务直接用 */
+export const http = createHttpClient({
+  getToken: () => memoryToken,
+});
+
+// ============ 简便快捷方法 ============
 export async function get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const res = await http.get<T>(url, config);
   return res.data;
 }
-
 export async function post<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
   const res = await http.post<T>(url, body, config);
   return res.data;
 }
-
 export async function put<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
   const res = await http.put<T>(url, body, config);
   return res.data;
 }
-
 export async function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const res = await http.delete<T>(url, config);
   return res.data;

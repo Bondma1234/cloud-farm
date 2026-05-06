@@ -113,12 +113,135 @@ async function main() {
   console.log(`  ✓ ${PLOTS.length} 地块`);
 
   // 3. Demo 用户
-  await prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: { phone: DEMO_USER.phone },
     create: DEMO_USER,
     update: DEMO_USER,
   });
   console.log('  ✓ 1 demo 用户');
+
+  // 4. Demo 用户的收货地址(2 条)
+  const addresses = [
+    {
+      id: 'addr-demo-1',
+      userId: user.id,
+      name: '严先生',
+      phone: '13800000001',
+      province: '北京市',
+      city: '北京市',
+      district: '海淀区',
+      detail: '中关村软件园 3 号楼 12A',
+      tag: '公司',
+      isDefault: true,
+    },
+    {
+      id: 'addr-demo-2',
+      userId: user.id,
+      name: '严小祎',
+      phone: '13900007829',
+      province: '北京市',
+      city: '北京市',
+      district: '朝阳区',
+      detail: '望京 SOHO T1 塔楼 2304',
+      tag: '家',
+      isDefault: false,
+    },
+  ];
+  for (const a of addresses) {
+    await prisma.address.upsert({
+      where: { id: a.id },
+      create: a,
+      update: a,
+    });
+  }
+  console.log(`  ✓ ${addresses.length} 收货地址`);
+
+  // 5. Demo 用户的订单(3 条,覆盖不同状态)
+  const orders = [
+    {
+      id: 'ORD-2026-0418',
+      userId: user.id,
+      type: '认养',
+      typeIcon: '🌱',
+      title: '小祎的菜园(进阶版 15㎡)',
+      cover: '/images/pkg-pro.jpg',
+      price: 799,
+      count: 1,
+      status: 'growing',
+      statusLabel: '种植中',
+      date: new Date('2026-03-01'),
+      packageId: 'pkg-pro',
+      addressId: 'addr-demo-1',
+      metadata: JSON.stringify({
+        subItems: [
+          { label: '地块', value: 'A 区 · 07 号' },
+          { label: '作物', value: '🍅 小番茄' },
+          { label: '立牌', value: '小祎的菜园' },
+          { label: '到期', value: '2027-03-01' },
+        ],
+        timeline: [
+          { at: '2026-03-01 10:23', event: '下单成功', done: true },
+          { at: '2026-03-01 10:25', event: '支付完成', done: true },
+          { at: '2026-03-01 14:00', event: '分配地块 A-07', done: true },
+          { at: '2026-03-05 09:00', event: '首批作物下地', done: true },
+          { at: '2026-04-15 08:12', event: '进入开花期', done: true },
+          { at: '2026-05-30', event: '预计首次收获', done: false },
+        ],
+      }),
+    },
+    {
+      id: 'ORD-2026-0415',
+      userId: user.id,
+      type: '产地直送',
+      typeIcon: '📦',
+      title: '蜜薯 3 斤 · 今日现挖',
+      cover: '/images/crop-sweetpotato.jpg',
+      price: 9.9 as unknown as number, // Prisma Int 不支持小数,改成元 *100 存才是规范,P2+ 暂存粗糙值方便看
+      count: 1,
+      status: 'delivering',
+      statusLabel: '配送中',
+      date: new Date('2026-04-15'),
+      addressId: 'addr-demo-2',
+      metadata: JSON.stringify({
+        logistics: {
+          company: '顺丰速运',
+          no: 'SF1456789201',
+          nodes: [
+            { at: '2026-04-16 09:20', node: '北京朝阳分拣中心 已发出,派送中' },
+            { at: '2026-04-15 22:10', node: '北京顺义转运中心 已到达' },
+            { at: '2026-04-15 14:45', node: '河南周口 已揽收' },
+            { at: '2026-04-15 11:30', node: '订单已打包' },
+          ],
+        },
+      }),
+    },
+    {
+      id: 'ORD-2026-0326',
+      userId: user.id,
+      type: '认养',
+      typeIcon: '🌱',
+      title: '基础版 · 10㎡(孝心送爸妈)',
+      cover: '/images/pkg-basic.jpg',
+      price: 499,
+      count: 1,
+      status: 'pending',
+      statusLabel: '待付款',
+      date: new Date('2026-04-20'),
+      packageId: 'pkg-basic',
+      addressId: 'addr-demo-1',
+      metadata: JSON.stringify({ expireIn: '29:48' }),
+    },
+  ];
+  // 注: order.price 在 schema 里是 Int, 9.9 这个有小数的会被四舍五入成 10
+  // 真上线前要把 price 改成"分"为单位的 Int(规范金额),P2+ 暂略
+  for (const o of orders) {
+    await prisma.order.upsert({
+      where: { id: o.id },
+      create: { ...o, price: Math.round(o.price) },
+      update: { ...o, price: Math.round(o.price) },
+    });
+  }
+  console.log(`  ✓ ${orders.length} 订单`);
 
   console.log('🌾 seed 完成');
 }

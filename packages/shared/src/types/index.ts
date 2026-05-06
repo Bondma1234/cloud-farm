@@ -165,6 +165,25 @@ export interface Crop {
   recommendPkg: string[];
 }
 
+// ============ Auth ============
+export interface LoginParams {
+  phone: string;
+  code: string;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: number;
+    phone: string;
+    nickname: string;
+    avatar: string;
+    level: string;
+    role: string;
+  };
+}
+
 // ============ API 包装 ============
 export interface ApiResponse<T> {
   code: number; // 0 = 成功

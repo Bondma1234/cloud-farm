@@ -251,20 +251,26 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - Admin Dashboard 顶部"上架套餐"卡片改拉真实数据
   - Admin 新增 `/packages` Element Plus Table 套餐管理页
   - Vite 代理 `/api → :3000`
-- **★ P4-C miniapp 接 API + Mock 兜底(本次)** ——
+- **P4-C miniapp 接 API + Mock 兜底** ——
   - miniapp 加 `@cloud-farm/api-client` + `@cloud-farm/shared` workspace 依赖
-  - **新建 `apps/miniapp/src/stores/packages.js`**(Pinia store):
-    - `fetch()` action: 调 `listPackages()` 拉真实数据,失败 fallback 到 `MOCK_PACKAGES`
-    - `source` 字段标记数据来源:`'api'` / `'mock-fallback'` / `'init'`
-    - 60 秒缓存,避免重复请求
-  - 改造 4 个页面从 `PACKAGES` 常量切换为 store:home / packages / package-detail / checkout
-  - **packages 页加 mock 兜底警告条**:API 挂了时显示 ⚠️ 提示 + 点击重试
-  - vite.config.js 加 proxy `/api → :3000`(同 admin 模式)
-  - **三态闭环验收**:
-    - API 在线 → 真数据,无警告 ✅
-    - API 挂了 → mock 兜底,黄色警告条 ✅
-    - API 恢复 → 重试/刷新自动切真数据 ✅
-  - H5 build OK(119 modules,加 axios 后 +54)
+  - 新建 `stores/packages.js`(Pinia store): fetch + 60s 缓存 + mock fallback + source 标记
+  - 改造 4 页:home / packages / package-detail / checkout
+  - packages 页 ⚠️ 警告条提示后端未连接 + 重试
+  - vite.config.js 加 proxy `/api → :3000`
+  - 三态闭环验收(在线/挂了/恢复)全过
+- **★ P2+D 后端扩 Auth + User + Order(本次)** ——
+  - 装 `@nestjs/jwt` + `@nestjs/passport` + `passport-jwt`
+  - 新增 `common/auth/`:JwtPayload / JwtStrategy / JwtAuthGuard / @CurrentUser()
+  - 新增 **AuthModule**:`POST /api/auth/login`(mock SMS,任意 6 位数字通过) → 签 access(15m) + refresh(7d) JWT
+  - 新增 **UserModule**(都需 JwtAuthGuard):
+    - `GET /api/users/me` 返回当前用户(手机号脱敏)
+    - `GET /api/users/me/addresses` 当前用户地址列表(默认地址置顶)
+  - 新增 **OrderModule**(都需 JwtAuthGuard):
+    - `GET /api/orders?status=` 当前用户订单列表(状态过滤,日期降序)
+    - `GET /api/orders/:id` 订单详情(强制属于当前用户,否则 404)
+  - **seed 扩展**:demo 用户 + 2 收货地址 + 3 订单(覆盖 growing/delivering/pending 状态)
+  - **api-client 扩展**:加 `auth.ts` / `users.ts` / `orders.ts`,http.ts 加 `setAccessToken/getAccessToken`(localStorage 持久化)
+  - **9 项 curl 闭环全过**:无 token 401 / 登录拿 token / /me / /addresses / /orders / 详情 / 状态过滤 / 错误码 401
 
 🚧 **下一步路线**(架构 v2 §10)
 
@@ -274,14 +280,97 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | ✅ 已完成 |
 | **P2+B Admin 端到端打通** | packages/api-client + Admin 显示真实套餐 | ✅ 已完成 |
 | **P4-C miniapp 套餐接 API** | home / packages / package-detail / checkout 走真 API + mock 兜底 | ✅ 已完成 |
-| **P2+ API 扩展** | 加 User/Order/Plot/Camera 等模块,登录 / JWT / 业务 CRUD | 待开始 |
-| **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理 | 待 P2+ |
-| **P4+ miniapp 其余模块接 API** | 订单 / 我的田 / 动态 / 摄像头 等其余 mock 模块 | 待 P2+ |
+| **P2+D Auth + User + Order** | JWT + 登录 + /users/me + /users/me/addresses + /orders | ✅ 已完成 |
+| **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理 | 待开始 |
+| **P4+ miniapp 其余模块接 API** | login / orders / address 切真 API,订单详情 / 我的田 / 动态 等 | 待开始 |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |
 
-## 10. 关于 Claude Code 自身
+## 10. 换电脑续作指南
+
+任何 git 拉下仓库的新机器,按以下顺序操作:
+
+### Step 1 - 一次性环境(每台机器装一次)
+
+| 工具 | 版本 | 装法 |
+|---|---|---|
+| Git | 任意 | <https://git-scm.com> |
+| Node.js | **20.x**(对齐 `apps/miniapp/.nvmrc`) | 官网 / nvm |
+| pnpm | 10+ | `npm i -g pnpm@10` |
+| Claude Code(可选) | 最新 | <https://claude.com/claude-code> |
+
+### Step 2 - 拉代码
+
+```bash
+git clone https://github.com/Bondma1234/cloud-farm.git
+cd cloud-farm
+```
+
+### Step 3 - 装依赖(一次)
+
+```bash
+pnpm install   # 一次装好 4 apps + 3 packages 的所有依赖,~2-3 分钟
+```
+
+### Step 4 - 后端首次初始化(一次)
+
+```bash
+cd apps/api
+
+# 1. 创建本地 .env(从模板复制,默认值开发够用,生产必须改)
+cp .env.example .env
+
+# 2. 跑 Prisma 迁移建表(SQLite 文件 prisma/dev.db 自动产生)
+pnpm exec prisma migrate dev
+
+# 3. 灌种子数据:3 套餐 + 12 地块 + 1 demo 用户 + 2 地址 + 3 订单
+pnpm db:seed
+
+cd ../..
+```
+
+### Step 5 - 启动验证
+
+3 个终端各起一个:
+
+```bash
+# 终端 1
+pnpm dev:api          # http://localhost:3000/api/health
+                       # http://localhost:3000/api/docs (Swagger)
+
+# 终端 2
+pnpm dev:admin        # http://localhost:5183 (任意 6 位密码登录)
+
+# 终端 3
+pnpm dev:miniapp      # http://localhost:5180
+```
+
+### Step 6 - GitHub 推送(若要 push)
+
+私有仓库需要认证。两条路:
+
+- **HTTPS + PAT**: `git push` 时弹账号 + Personal Access Token(从 GitHub Settings → Developer settings 生成)
+- **SSH key**: 在新机器 `ssh-keygen` 生成密钥,公钥粘到 GitHub Settings → SSH keys,然后把 git remote 改成 `git@github.com:Bondma1234/cloud-farm.git`
+
+### Step 7 - **不会跟着 git 走的东西**(每台机器各自有)
+
+| 文件 / 目录 | 说明 | 怎么补 |
+|---|---|---|
+| `apps/api/.env` | 后端环境变量(JWT_SECRET 等) | 从 `.env.example` 复制 |
+| `apps/api/prisma/dev.db` | SQLite 开发库 | `pnpm exec prisma migrate dev && pnpm db:seed` 重建 |
+| `node_modules/` (各处) | 依赖 | `pnpm install` |
+| `apps/*/dist/` | 构建产物 | `pnpm build:all` |
+| `.claude/settings.local.json` | Claude Code 这台机器的 Bash 白名单 | 第一次跑会被问"允许吗",允许过就持久化 |
+| `~/.claude/projects/<hash>/*.jsonl` | Claude 会话历史 | 不补,新机器从头新会话 |
+
+### Step 8 - 当前进度查看
+
+打开 Claude Code 之后,它会自动读这份 `CLAUDE.md` —— **§9 当前进度** 那张表就是真实状态(P1/P2/P2+B/P4-C/P2+D 都已完成,下一步是 P3 Admin CRUD 或 P4+ miniapp 其余模块)。
+
+---
+
+## 11. 关于 Claude Code 自身
 
 - **项目级配置**: `.claude/settings.local.json` 是这台机器的 Bash 白名单,**不入 git**(.gitignore 里已加),换电脑后第一次打开会被问几次"允许吗",允许过就持久化了
 - **会话历史**: `~/.claude/projects/C--TestProject-Cloud-Farm-project/*.jsonl`,本地存,**不会跟着 git 走**。所以这份 `CLAUDE.md` 才是项目记忆的"主备份"

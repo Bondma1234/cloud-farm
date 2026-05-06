@@ -9,4 +9,7 @@
 //   try { ... } catch (e) { if (e instanceof ApiError && e.code === 404) ... }
 
 export * from './http';
+export * from './api/auth';
+export * from './api/users';
+export * from './api/orders';
 export * from './api/packages';

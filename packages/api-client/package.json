@@ -9,6 +9,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./http": "./src/http.ts",
+    "./auth": "./src/api/auth.ts",
+    "./users": "./src/api/users.ts",
+    "./orders": "./src/api/orders.ts",
     "./packages": "./src/api/packages.ts"
   },
   "scripts": {
