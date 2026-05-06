@@ -1,0 +1,142 @@
+// ============ 云上田园 数据库 schema ============
+// 跨方言安全:用 SQLite (开发) / MySQL (生产) 都能跑
+// 切换方法:把 datasource 的 provider 改成 mysql,DATABASE_URL 改成 mysql://...
+// 详见 CLAUDE.md §7 与架构 v2 §4
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"            // ★ 上线切 MySQL 时改这里 + DATABASE_URL
+  url      = env("DATABASE_URL")
+}
+
+// ============ User ============
+// C 端用户 + B 端账号(role 区分)
+model User {
+  id        Int      @id @default(autoincrement())
+  phone     String   @unique
+  nickname  String   @default("田园用户")
+  avatar    String   @default("🧑‍🌾")
+  level     String   @default("Lv.1")
+  role      String   @default("customer") // customer / agronomist / cs / operator / admin
+  openid    String?  @unique
+  unionid   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addresses Address[]
+  orders    Order[]
+}
+
+// ============ Address ============
+model Address {
+  id        String   @id @default(cuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String
+  province  String
+  city      String
+  district  String
+  detail    String
+  tag       String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============ Package(认养套餐) ============
+// id 用业务可读字符串(pkg-basic / pkg-pro / pkg-family)
+// gallery / highlights / crops 是数组,跨方言安全用 String 存 JSON
+model Package {
+  id          String   @id // 'pkg-basic' | 'pkg-pro' | 'pkg-family' | ...
+  name        String
+  area        Int      // 平方米
+  price       Int      // 单位:元/年
+  tag         String   // '热销' / '推荐' / '亲子'
+  cover       String
+  gallery     String   // JSON 数组(string[])
+  highlights  String   // JSON 数组(string[])
+  crops       String   // JSON 数组(string[])
+  status      String   @default("active") // active / archived
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders      Order[]
+}
+
+// ============ Plot(地块) ============
+model Plot {
+  id        String   @id // 'P-A-07'
+  block     String   // 'A 区'
+  row       Int
+  col       Int
+  status    String   @default("available") // available / sold / maintenance / reserved
+  sunHours  Int      @default(6)
+  soilScore Int      @default(85)
+  cameraId  String?  @unique
+  camera    Camera?  @relation(fields: [cameraId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============ Camera(摄像头) ============
+// 1 plot 1 camera (P5 接萤石云)
+model Camera {
+  id           String    @id @default(cuid())
+  deviceSerial String    @unique
+  vendor       String    @default("ezviz") // ezviz / hikvision / custom
+  channelNo    Int       @default(1)
+  ptzSupported Boolean   @default(false)
+  status       String    @default("offline") // online / offline / maintenance
+  lastOnlineAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  plot         Plot?
+}
+
+// ============ Order(订单) ============
+// 包括认养订单 + 农产品订单(type 区分)
+// metadata 存订单类型相关的扩展字段(timeline/logistics/subItems),JSON
+model Order {
+  id          String   @id // 'ORD-2026-0418'
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  type        String   // '认养' | '产地直送'
+  typeIcon    String
+  title       String
+  cover       String
+  price       Int      // 单位:元
+  count       Int      @default(1)
+  status      String   // pending / paid / shipped / delivering / completed / growing / cancelled
+  statusLabel String
+  date        DateTime
+  packageId   String?
+  package     Package? @relation(fields: [packageId], references: [id])
+  addressId   String?
+  metadata    String?  // JSON 字符串
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============ JournalEntry(田园动态) ============
+model JournalEntry {
+  id        String   @id @default(cuid())
+  type      String   // bloom/water/fertilize/weed/shoot/plant/ship/harvest/pest
+  icon      String
+  title     String
+  summary   String
+  body      String
+  photos    String   // JSON 数组(string[])
+  by        String   // 农技员姓名
+  at        DateTime
+  plotId    String?
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

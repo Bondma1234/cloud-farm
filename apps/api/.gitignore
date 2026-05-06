@@ -3,3 +3,7 @@ dist/
 .env
 .env.local
 *.log
+
+# SQLite 开发库 (跨电脑不共享, 各自 pnpm db:seed 生成)
+*.db
+*.db-journal

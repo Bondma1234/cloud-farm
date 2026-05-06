@@ -24,11 +24,14 @@
     "onlyBuiltDependencies": [
       "@nestjs/core",
       "@parcel/watcher",
+      "@prisma/client",
+      "@prisma/engines",
       "@swc/core",
       "@tarojs/binding",
       "core-js",
       "core-js-pure",
       "esbuild",
+      "prisma",
       "vue-demi"
     ]
   }

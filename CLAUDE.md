@@ -66,18 +66,35 @@ pnpm docs:gen           # 重新生成 3 份 docx
 # 1. 装依赖(首次或拉新)
 pnpm install
 
-# 2. 起数据库(后台进程)
-docker compose up -d            # MySQL:3306, Redis:6379
+# 2. (P2 起)初始化后端数据库 - 首次或重置时
+cd apps/api
+pnpm exec prisma migrate dev    # 跑迁移建表(开发用 SQLite,跨方言安全)
+pnpm db:seed                    # 灌套餐/地块/demo 用户数据
+cd ../..
 
-# 3. 起后端
+# 3. (可选)起 docker MySQL/Redis - 切到生产模式时
+# docker compose up -d          # MySQL:3306, Redis:6379
+
+# 4. 起后端
 pnpm dev:api                    # http://localhost:3000/api/health
+                                # http://localhost:3000/api/docs (Swagger)
 
-# 4. (另开终端)起 admin
+# 5. (另开终端)起 admin
 pnpm dev:admin                  # http://localhost:5183 (代理 /api → :3000)
 
-# 5. (另开终端)起 miniapp H5
+# 6. (另开终端)起 miniapp H5
 pnpm dev:miniapp                # http://localhost:5180
 ```
+
+### 数据库切换:开发 SQLite ↔ 生产 MySQL
+
+P2 阶段开发用 SQLite(`apps/api/dev.db`,不入 git),生产期切 MySQL。**切换 = 改 3 处**:
+
+1. `apps/api/prisma/schema.prisma` 第 12 行:`provider = "sqlite"` → `"mysql"`
+2. `apps/api/.env` 的 `DATABASE_URL`:`file:./dev.db` → `mysql://user:pwd@host:3306/cloud_farm`
+3. `pnpm exec prisma migrate deploy && pnpm db:seed` 在 MySQL 上重建表 + 灌数据
+
+业务代码 0 改动,Prisma Client 屏蔽了方言差异。schema.prisma 里只用跨方言安全的字段类型(JSON 数组用 String 存),不用 SQLite 专属特性。详见架构 v2 §4。
 
 `apps/miniapp/` 内部:
 
@@ -210,25 +227,34 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 - `mock/images.js` 单一来源架构
 - H5 构建 OK(65 modules,~76 KB gzip JS + ~9 KB gzip CSS + 2.1 MB images)
 - **三份正式文档**(项目书 v3 / 需求 v2 / 架构 v2),md + docx 双份
-- **★ P1 架构地基(本次)** ——
+- **P1 架构地基** ——
   - pnpm workspace 落地,4 apps + 1 package 全部跑通
   - apps/api: NestJS 10 + ConfigModule,`GET /api/health` 通过
   - apps/admin: Vue 3 + Vite + Element Plus,登录页 + 工作台壳子能跑
   - packages/shared: TS 类型 + 业务常量 + 纯函数(从 mock.js 抽出来)
   - docker-compose.yml: MySQL 8 + Redis 7
   - 三个 app 都能 build 通过,miniapp 在 pnpm 下不变 65 modules
+- **★ P2 API 最小切口(本次)** ——
+  - Prisma 6.19 + SQLite,7 张表(User/Address/Package/Plot/Camera/Order/JournalEntry)
+  - 第一次 migration `20260503082607_init` 建表完毕
+  - seed 脚本灌入:3 套餐 + 12 地块 + 1 demo 用户
+  - PrismaService(全局)+ PackageModule(controller + service + DTO)
+  - 全局基础设施:ValidationPipe / TransformInterceptor({code,message,data}) / AllExceptionsFilter / CORS
+  - Swagger 文档接入 `/api/docs`(可视化测接口 + 生成客户端的依据)
+  - 冒烟通过:`GET /api/packages` 返回真实 DB 数据,`/api/packages/no-such-id` 返 404 标准格式
 
 🚧 **下一步路线**(架构 v2 §10)
 
 | 阶段 | 内容 | 当前状态 |
 |---|---|---|
 | **P1 架构地基** | pnpm workspace + docker-compose + apps/api/admin 空项目 + packages/shared | ✅ 已完成 |
-| **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | 待开始 |
-| **P3 Admin 最小切口** | 登录 + 套餐 CRUD | 待 P2 |
+| **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | ✅ 已完成 |
+| **P2+ API 扩展** | 加 User/Order/Plot/Camera 等模块,登录 / JWT / 业务 CRUD | 待开始 |
+| **P3 Admin 最小切口** | 接通 /api/packages,套餐 CRUD,真 JWT 登录 | 待 P2+ |
 | **P4 miniapp 接 API** | 替换 mock.js 为真实接口 | 待 P3 |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
-| 旁路任务 | Cloudflare Pages 接 Git 自动部署 | 已搭好基建,暂手动拖 |
+| 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |
 
 ## 10. 关于 Claude Code 自身
 
