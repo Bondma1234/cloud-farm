@@ -234,14 +234,24 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - packages/shared: TS 类型 + 业务常量 + 纯函数(从 mock.js 抽出来)
   - docker-compose.yml: MySQL 8 + Redis 7
   - 三个 app 都能 build 通过,miniapp 在 pnpm 下不变 65 modules
-- **★ P2 API 最小切口(本次)** ——
+- **P2 API 最小切口** ——
   - Prisma 6.19 + SQLite,7 张表(User/Address/Package/Plot/Camera/Order/JournalEntry)
   - 第一次 migration `20260503082607_init` 建表完毕
   - seed 脚本灌入:3 套餐 + 12 地块 + 1 demo 用户
   - PrismaService(全局)+ PackageModule(controller + service + DTO)
   - 全局基础设施:ValidationPipe / TransformInterceptor({code,message,data}) / AllExceptionsFilter / CORS
-  - Swagger 文档接入 `/api/docs`(可视化测接口 + 生成客户端的依据)
-  - 冒烟通过:`GET /api/packages` 返回真实 DB 数据,`/api/packages/no-such-id` 返 404 标准格式
+  - Swagger 文档接入 `/api/docs`
+  - 冒烟通过:`GET /api/packages` 返回真实 DB 数据
+- **★ P2+B Admin 端到端打通(本次)** ——
+  - **packages/api-client** 落地 ★(axios + 拦截器 + Package API + ApiError 类型)
+    - 自动解开后端 `{code, message, data}` envelope,业务代码拿到的就是 data
+    - 类型从 `@cloud-farm/shared` 来,前后端类型同源
+    - admin / miniapp / web 三端共享,P4 miniapp 接 API 时直接复用
+  - Admin 抽公共布局组件 `AdminAside` / `AdminHeader`(供后续多页面复用)
+  - Admin Dashboard 顶部"上架套餐"卡片改拉 `listPackages()`,真实显示 **3**
+  - Admin 新增 `/packages` 套餐管理页,Element Plus Table 展示真实 3 条数据(封面/名称/面积/价格/标签/作物/状态)
+  - Vite 代理 `/api → :3000` 自动转发,无 CORS 问题
+  - 端到端验收:登录 → Dashboard 显示真实 3 套餐 → 点 sidebar 进 /packages → Table 显示完整数据
 
 🚧 **下一步路线**(架构 v2 §10)
 
@@ -249,8 +259,9 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 |---|---|---|
 | **P1 架构地基** | pnpm workspace + docker-compose + apps/api/admin 空项目 + packages/shared | ✅ 已完成 |
 | **P2 API 最小切口** | NestJS + Prisma schema + GET /api/packages | ✅ 已完成 |
+| **P2+B Admin 端到端打通** | packages/api-client + Admin 显示真实套餐 | ✅ 已完成 |
 | **P2+ API 扩展** | 加 User/Order/Plot/Camera 等模块,登录 / JWT / 业务 CRUD | 待开始 |
-| **P3 Admin 最小切口** | 接通 /api/packages,套餐 CRUD,真 JWT 登录 | 待 P2+ |
+| **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理 | 待 P2+ |
 | **P4 miniapp 接 API** | 替换 mock.js 为真实接口 | 待 P3 |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |

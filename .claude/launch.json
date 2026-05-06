@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "miniapp-web",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "web", "--prefix", "apps/miniapp"],
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:miniapp"],
       "port": 5180
     },
     {
@@ -12,6 +12,18 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["-y", "serve", "-p", "5181", "-L", "apps/miniapp/dist"],
       "port": 5181
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:admin"],
+      "port": 5183
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:api"],
+      "port": 3000
     }
   ]
 }

@@ -14,6 +14,12 @@ importers:
 
   apps/admin:
     dependencies:
+      '@cloud-farm/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@cloud-farm/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@element-plus/icons-vue':
         specifier: ^2.3.1
         version: 2.3.2(vue@3.5.33(typescript@5.9.3))
@@ -185,6 +191,19 @@ importers:
       vite:
         specifier: ^4.5.3
         version: 4.5.14(@types/node@25.6.0)(sass@1.99.0)(terser@5.46.2)
+
+  packages/api-client:
+    dependencies:
+      '@cloud-farm/shared':
+        specifier: workspace:*
+        version: link:../shared
+      axios:
+        specifier: ^1.7.7
+        version: 1.15.2
+    devDependencies:
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
 
   packages/shared:
     devDependencies:

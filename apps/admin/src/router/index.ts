@@ -10,6 +10,11 @@ export const router = createRouter({
       component: () => import('@/views/Dashboard.vue'),
       meta: { title: '工作台', requiresAuth: true },
     },
+    {
+      path: '/packages',
+      component: () => import('@/views/Packages.vue'),
+      meta: { title: '套餐管理', requiresAuth: true },
+    },
   ],
 });
 

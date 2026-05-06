@@ -2,4 +2,7 @@ node_modules/
 dist/
 .env.local
 *.log
-.tsbuildinfo
+*.tsbuildinfo
+# unplugin-vue-components 自动扫描生成,跑 dev/build 就会更新
+components.d.ts
+auto-imports.d.ts
