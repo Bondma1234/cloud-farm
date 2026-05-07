@@ -108,7 +108,8 @@
 
 <script setup>
 import Taro, { useRouter } from '@tarojs/taro';
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { createAddress, updateAddress, deleteAddress, ApiError } from '@cloud-farm/api-client';
 import { useAppStore } from '../../stores/mock';
 
 const router = useRouter();
@@ -116,7 +117,30 @@ const store = useAppStore();
 const id = router.params?.id || '';
 const isEdit = computed(() => !!id);
 
+// 编辑模式:从 store 找一条已有的;若 store 是空的,先 fetchAddresses 一下
 const exist = id ? store.addresses.find(a => a.id === id) : null;
+
+onMounted(async () => {
+  // 进编辑模式但 store 没数据(直接深链进来)
+  if (isEdit.value && !exist) {
+    await store.bootstrap();
+    await store.fetchAddresses();
+    const found = store.addresses.find(a => a.id === id);
+    if (found) {
+      form.name = found.name;
+      // 从脱敏 phone 反推回真号(不可能, 这里编辑时让用户重填或保持脱敏不可改)
+      // 后端会校验 phone 格式, 脱敏值 138****0001 校验失败
+      // 所以编辑时如果 phone 是 *** 形式, 必须用户重填
+      form.phone = found.phone.includes('*') ? '' : found.phone;
+      form.province = found.province;
+      form.city = found.city;
+      form.district = found.district;
+      form.detail = found.detail;
+      form.tag = found.tag || '';
+      form.isDefault = found.isDefault;
+    }
+  }
+});
 
 const form = reactive({
   id: exist?.id || '',
@@ -194,42 +218,59 @@ const canSave = computed(() =>
   form.name && /^1[3-9]\d{9}$/.test(form.phone) && form.province && form.district && form.detail.length >= 4
 );
 
-const save = () => {
+const save = async () => {
   if (!form.name) return Taro.showToast({ title: '请输入收货人', icon: 'none' });
   if (!/^1[3-9]\d{9}$/.test(form.phone)) return Taro.showToast({ title: '手机号格式不正确', icon: 'none' });
   if (!form.province || !form.district) return Taro.showToast({ title: '请选择地区', icon: 'none' });
   if (form.detail.length < 4) return Taro.showToast({ title: '详细地址太短', icon: 'none' });
 
   const payload = {
-    id: form.id,
     name: form.name,
-    phone: form.phone.slice(0, 3) + '****' + form.phone.slice(7),
+    phone: form.phone, // 真号传后端,后端入库不脱敏,返回时脱敏
     province: form.province,
     city: form.city,
     district: form.district,
     detail: form.detail,
-    tag: form.tag,
-    isDefault: form.isDefault
+    tag: form.tag || undefined,
+    isDefault: form.isDefault,
   };
 
-  if (form.isDefault) {
-    store.addresses.forEach(a => a.isDefault = false);
+  Taro.showLoading({ title: '保存中...' });
+  try {
+    if (isEdit.value) {
+      await updateAddress(id, payload);
+    } else {
+      await createAddress(payload);
+    }
+    // 同步本地 store(让上一页刷新就能看到)
+    await store.fetchAddresses();
+    Taro.hideLoading();
+    Taro.showToast({ title: '已保存', icon: 'success' });
+    setTimeout(() => Taro.navigateBack().catch(() => {}), 500);
+  } catch (e) {
+    Taro.hideLoading();
+    const msg = e instanceof ApiError ? e.message : (e?.message || '保存失败');
+    Taro.showModal({ title: '保存失败', content: msg, showCancel: false });
   }
-  store.upsertAddress(payload);
-
-  Taro.showToast({ title: '已保存', icon: 'success' });
-  setTimeout(() => Taro.navigateBack().catch(() => {}), 500);
 };
 
 const del = () => {
   Taro.showModal({
     title: '删除地址',
     content: '确定删除该地址？',
-    success: (res) => {
-      if (res.confirm) {
-        store.removeAddress(id);
+    success: async (res) => {
+      if (!res.confirm) return;
+      Taro.showLoading({ title: '删除中...' });
+      try {
+        await deleteAddress(id);
+        await store.fetchAddresses();
+        Taro.hideLoading();
         Taro.showToast({ title: '已删除', icon: 'success' });
         setTimeout(() => Taro.navigateBack().catch(() => {}), 500);
+      } catch (e) {
+        Taro.hideLoading();
+        const msg = e instanceof ApiError ? e.message : (e?.message || '删除失败');
+        Taro.showModal({ title: '删除失败', content: msg, showCancel: false });
       }
     }
   });

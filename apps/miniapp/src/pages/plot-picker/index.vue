@@ -64,22 +64,52 @@
 </template>
 
 <script setup>
-import Taro from '@tarojs/taro';
-import { computed, ref } from 'vue';
-import { PLOTS } from '../../stores/mock';
+import Taro, { useRouter } from '@tarojs/taro';
+import { computed, onMounted, ref } from 'vue';
+import { listPlots, ApiError } from '@cloud-farm/api-client';
+import { PLOTS as MOCK_PLOTS } from '../../stores/mock';
 
-const plots = PLOTS;
-const selected = ref('P-A-07');
-const current = computed(() => plots.find(p => p.id === selected.value));
+const router = useRouter();
+// 从 package-detail 跳过来时,带 ?pkg=pkg-pro 透传到 checkout
+const pkgId = router.params?.pkg || 'pkg-pro';
+
+const plots = ref([]);
+const selected = ref('');
+const current = computed(() => plots.value.find(p => p.id === selected.value));
+const loading = ref(false);
+const apiSource = ref('init');
+
+async function load() {
+  loading.value = true;
+  try {
+    plots.value = await listPlots();
+    apiSource.value = 'api';
+    // 默认选第一块可认养的
+    const firstAvail = plots.value.find(p => p.status === 'available');
+    if (firstAvail) selected.value = firstAvail.id;
+  } catch (e) {
+    apiSource.value = 'mock-fallback';
+    plots.value = MOCK_PLOTS;
+    selected.value = 'P-A-07';
+    const msg = e instanceof ApiError ? e.message : (e?.message || '网络错误');
+    Taro.showToast({ title: `${msg}, 已用 mock`, icon: 'none' });
+  } finally {
+    loading.value = false;
+  }
+}
 
 const pick = p => {
-  if (p.status === 'sold') return Taro.showToast({ title: '此地块已售', icon: 'none' });
+  if (p.status !== 'available') return Taro.showToast({ title: '此地块已售', icon: 'none' });
   selected.value = p.id;
 };
 const confirm = () => {
-  if (!current.value || current.value.status === 'sold') return;
-  Taro.redirectTo({ url: `/pages/checkout/index?plot=${current.value.id}` });
+  if (!current.value || current.value.status !== 'available') {
+    return Taro.showToast({ title: '请先选一块可认养的地块', icon: 'none' });
+  }
+  Taro.redirectTo({ url: `/pages/checkout/index?pkg=${pkgId}&plot=${current.value.id}` });
 };
+
+onMounted(load);
 </script>
 
 <style lang="scss" scoped>

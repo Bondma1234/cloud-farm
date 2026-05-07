@@ -284,7 +284,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - **api-client 默认实例**:`http.ts` 加内置 token 管理(localStorage 持久化),`login()` 自动写 token,刷新页面自动恢复登录态
   - **5 页端到端验收全过**(填手机号 → 同意协议 → 验证码自动填 → 真 JWT 登录 → home/profile/orders/order-detail/address 真数据)
   - H5 build:123 modules(P4-C 后 +4),gzip 46KB JS / 9KB CSS
-- **★ P4-G 内容模块全打通(本次)** ——
+- **P4-G 内容模块全打通** ——
   - **schema 扩展**:加 `Crop` / `PhotoPost` / `Command` 三张表,migration `add_crop_photo_command` 落地(Journal 表本来就在)
   - **seed 扩展**:6 田园动态 + 8 作物 + 8 照片墙帖子 + 6 指令工单(全部对齐 mock 数据)
   - **NestJS 加 4 模块**:
@@ -299,10 +299,26 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - **e2e 验收全过**:journal 6/crops 8/photos 8/commands 6 全部从 SQLite 真出
   - H5 build:131 modules(P4-E 后 +8),gzip 46.6 KB JS / 9.3 KB CSS
 
-至此 **miniapp 17 个页面里 14 个走真后端**,只剩 3 个还在 mock:
-- `my-plot`(我的田)— 等 P5 摄像头接萤石云一起做
-- `plot-picker`(选地块)— 等 P2++ 加 PlotModule
-- `address-edit`(编辑地址)— 等 P2++ 加 Address CRUD
+- **★ P4-H 业务流程闭环(本次)** ——
+  - **PlotModule** 新增:`GET /api/plots[/available][/:id]`,公开接口
+  - **Address CRUD** 完整:`POST/PATCH/DELETE /api/users/me/addresses`(JWT,事务保证默认地址唯一)
+  - **OrderModule 扩展**:
+    - `POST /api/orders` 创建认养订单 → **事务原子操作**:校验套餐 + 校验地块可用 + 锁地块 (status=sold) + 校验地址 + 生成订单 ID + 写 metadata
+    - `PATCH /api/orders/:id/cancel` 取消订单(待付款 / 待发货可取消)
+  - **api-client 扩展**:`plots.ts` / `users.createAddress/updateAddress/deleteAddress` / `orders.createOrder/cancelOrder`,http.ts 加 `patch()` 方法
+  - **5 页改造**:
+    - `plot-picker`:GET /api/plots,可选择真实可认养地块,跳 checkout 透传 pkg + plot
+    - `checkout`:POST /api/orders 真创建订单,自动跳 order-detail
+    - `address-edit`:POST/PATCH/DELETE 真接口,失败 modal 详细提示
+    - `address`:配合 fetchAddresses 自动刷新
+    - `orders`:取消订单走 cancelOrder() 真接口
+  - **e2e 验收全过**:
+    - 选 P-A-02 → 创建订单 ORD-2026-050702 → 地块 status auto sold → 出现在我的订单
+    - POST 地址 → PATCH 改 isDefault=true → DELETE 全过
+    - PATCH cancel → status=cancelled
+
+至此 **miniapp 17 个页面 16 个走真后端**,只剩 1 个还在 mock:
+- `my-plot`(我的田)— 等 P5 摄像头接萤石云一起做(地块详情/摄像头/PTZ/抓拍)
 
 🚧 **下一步路线**(架构 v2 §10)
 
@@ -315,8 +331,9 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P2+D Auth + User + Order** | JWT + 登录 + /users/me + /users/me/addresses + /orders | ✅ 已完成 |
 | **P4-E miniapp 接 Auth/User/Order** | login/profile/orders/order-detail/address 5 页接真 API + mock fallback | ✅ 已完成 |
 | **P4-G 内容模块全打通** | Journal/Crop/Photo/Command 4 模块 + 4 页接真 API | ✅ 已完成 |
-| **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理 | 待开始 |
-| **P2++ 补 Plot / Address CRUD** | 给 plot-picker / address-edit 接真接口 | 待开始 |
+| **P4-H 业务流程闭环** | Plot/Address/Order create+cancel + plot-picker/checkout/address-edit | ✅ 已完成 |
+| **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理(B 端管所有用户) | 待开始 |
+| **P5 摄像头接萤石云** | my-plot 接真摄像头,需要先注册萤石账号 | 待 P3 |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |

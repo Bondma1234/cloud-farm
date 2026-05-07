@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { OrderDto, OrderListQueryDto } from './dto/order.dto';
+import { CreateOrderDto } from './dto/order-create.dto';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { JwtPayload } from '../../common/auth/jwt-payload';
@@ -30,5 +31,20 @@ export class OrderController {
   @ApiResponse({ status: 404, description: '订单不存在或不属于当前用户' })
   detail(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<OrderDto> {
     return this.orderService.findOneByUser(user.sub, id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '创建认养订单(自动锁地块,30 分钟未付款自动释放 — P5+)' })
+  @ApiResponse({ status: 201, type: OrderDto })
+  @ApiResponse({ status: 409, description: '地块已被认养' })
+  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateOrderDto): Promise<OrderDto> {
+    return this.orderService.create(user.sub, dto);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: '取消订单(待付款 / 待发货可取消)' })
+  @ApiResponse({ status: 200, type: OrderDto })
+  cancel(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<OrderDto> {
+    return this.orderService.cancel(user.sub, id);
   }
 }

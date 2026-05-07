@@ -1,13 +1,17 @@
 <template>
   <view class="page">
-    <view class="card">
+    <view class="card" @tap="goAddress">
       <view class="row-h">
         <text class="lab">收货地址</text>
         <text class="more">›</text>
       </view>
-      <view class="addr">
-        <text class="addr-n">严先生 · 138 **** 5412</text>
-        <text class="addr-d">北京市海淀区中关村软件园 3 号楼 12A</text>
+      <view class="addr" v-if="address">
+        <text class="addr-n">{{ address.name }} · {{ address.phone }}</text>
+        <text class="addr-d">{{ address.province }} {{ address.city }} {{ address.district }} {{ address.detail }}</text>
+      </view>
+      <view class="addr" v-else>
+        <text class="addr-n">尚无收货地址</text>
+        <text class="addr-d">点击右侧 › 去新增</text>
       </view>
     </view>
 
@@ -63,7 +67,7 @@
         <text class="f-l">实付</text>
         <text class="f-v">¥ {{ pkg.price - 50 }}</text>
       </view>
-      <view class="f-btn" @tap="pay">微信支付</view>
+      <view class="f-btn" @tap="pay">提交订单</view>
     </view>
   </view>
 </template>
@@ -71,20 +75,30 @@
 <script setup>
 import Taro, { useRouter } from '@tarojs/taro';
 import { computed, onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { createOrder, ApiError } from '@cloud-farm/api-client';
 import { usePackageStore } from '../../stores/packages';
-import { PACKAGES as MOCK_PACKAGES } from '../../stores/mock';
+import { useAppStore, PACKAGES as MOCK_PACKAGES } from '../../stores/mock';
 
 const router = useRouter();
 const pkgStore = usePackageStore();
+const appStore = useAppStore();
+const { addresses, defaultAddressId } = storeToRefs(appStore);
+
 const pkg = computed(() => {
   const list = pkgStore.list.length ? pkgStore.list : MOCK_PACKAGES;
   return list.find(p => p.id === router.params.pkg) || list[1] || list[0];
 });
-
-onMounted(() => pkgStore.fetch());
 const plot = ref(router.params.plot || 'P-A-07');
 const stake = ref('小祎的菜园');
 const pickedCrops = ref(['小番茄']);
+
+// 收货地址:取默认地址,没有就第 1 条
+const address = computed(() => {
+  const list = addresses.value;
+  if (!list?.length) return null;
+  return list.find(a => a.id === defaultAddressId.value) || list[0];
+});
 
 const emoji = n => ({
   红薯: '🍠', 胡萝卜: '🥕', 土豆: '🥔', 南瓜: '🎃',
@@ -99,14 +113,47 @@ const toggleCrop = c => {
   else Taro.showToast({ title: `最多选 ${max} 种`, icon: 'none' });
 };
 
-const pay = () => {
-  Taro.showLoading({ title: '调起支付...' });
-  setTimeout(() => {
+const goAddress = () => Taro.navigateTo({ url: '/pages/address/index?mode=select' })
+  .catch(() => Taro.showToast({ title: '打开地址簿', icon: 'none' }));
+
+/**
+ * 真下单链路:
+ * 1. 校验
+ * 2. 调 POST /api/orders → 后端事务锁地块 + 创建订单
+ * 3. 成功 → toast + 跳订单页
+ *    - 后端约定:状态 'pending' 30 分钟内付款,过期自动释放(P5+)
+ *    - 微信支付 P5+ 接,现在按钮文案改成"提交订单(模拟支付)"
+ */
+const pay = async () => {
+  if (!pkg.value || !plot.value) return Taro.showToast({ title: '套餐 / 地块缺失', icon: 'none' });
+  if (!pickedCrops.value.length) return Taro.showToast({ title: '请至少选 1 种作物', icon: 'none' });
+  if (!address.value?.id) return Taro.showToast({ title: '请先选收货地址', icon: 'none' });
+
+  Taro.showLoading({ title: '提交订单...' });
+  try {
+    const order = await createOrder({
+      packageId: pkg.value.id,
+      plotId: plot.value,
+      crops: pickedCrops.value,
+      addressId: address.value.id,
+      stake: stake.value,
+    });
     Taro.hideLoading();
-    Taro.showToast({ title: '支付成功', icon: 'success' });
-    setTimeout(() => Taro.switchTab({ url: '/pages/my-plot/index' }), 1200);
-  }, 800);
+    Taro.showToast({ title: `订单 ${order.id} 创建成功`, icon: 'success' });
+    setTimeout(() => Taro.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` }), 1200);
+  } catch (e) {
+    Taro.hideLoading();
+    const msg = e instanceof ApiError ? e.message : (e?.message || '下单失败');
+    Taro.showModal({ title: '下单失败', content: msg, showCancel: false });
+  }
 };
+
+onMounted(async () => {
+  await Promise.all([
+    pkgStore.fetch(),
+    appStore.bootstrap().then(() => appStore.fetchAddresses()),
+  ]);
+});
 </script>
 
 <style lang="scss" scoped>

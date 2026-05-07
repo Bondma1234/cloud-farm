@@ -140,6 +140,10 @@ export async function put<T>(url: string, body?: unknown, config?: AxiosRequestC
   const res = await http.put<T>(url, body, config);
   return res.data;
 }
+export async function patch<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  const res = await http.patch<T>(url, body, config);
+  return res.data;
+}
 export async function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const res = await http.delete<T>(url, config);
   return res.data;

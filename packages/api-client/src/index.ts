@@ -17,3 +17,4 @@ export * from './api/journal';
 export * from './api/crops';
 export * from './api/photos';
 export * from './api/commands';
+export * from './api/plots';

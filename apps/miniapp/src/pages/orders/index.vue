@@ -148,8 +148,19 @@ const cancelOrder = (o) => {
   Taro.showModal({
     title: '取消订单',
     content: `确定取消订单 ${o.id}？`,
-    success: (res) => {
-      if (res.confirm) Taro.showToast({ title: '订单已取消', icon: 'success' });
+    success: async (res) => {
+      if (!res.confirm) return;
+      Taro.showLoading({ title: '取消中...' });
+      try {
+        const { cancelOrder: doCancel, ApiError } = await import('@cloud-farm/api-client');
+        await doCancel(o.id);
+        await orderStore.fetch({ force: true });
+        Taro.hideLoading();
+        Taro.showToast({ title: '订单已取消', icon: 'success' });
+      } catch (e) {
+        Taro.hideLoading();
+        Taro.showModal({ title: '取消失败', content: e?.message || '请稍后重试', showCancel: false });
+      }
     }
   });
 };

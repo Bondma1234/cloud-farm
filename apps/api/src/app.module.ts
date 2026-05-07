@@ -10,6 +10,7 @@ import { JournalModule } from './modules/journal/journal.module';
 import { CropModule } from './modules/crop/crop.module';
 import { PhotoModule } from './modules/photo/photo.module';
 import { CommandModule } from './modules/command/command.module';
+import { PlotModule } from './modules/plot/plot.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CommandModule } from './modules/command/command.module';
     CropModule,
     PhotoModule,
     CommandModule,
+    PlotModule,
   ],
   controllers: [HealthController],
   providers: [],
