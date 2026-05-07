@@ -4,87 +4,156 @@
 >
 > 远程认养 + 摄像头远程监控 + 农产品直送 的一线城市消费者云种植服务。
 
-## 项目状态(2026-05-01)
+## 项目状态(2026-05-07)
 
-🚧 **开发中** —— P1 架构地基完成,正准备进入 P2(后端 API 实现)阶段。
+🚧 **MVP 软件层 ≈ 80%**,完整业务闭环跑通(看套餐 → 选地块 → 提交订单 → 看到刚生成的真订单)。
 
 | 模块 | 状态 |
 |---|---|
-| C 端 miniapp(17 页 + mock 数据) | ✅ 已完成 |
-| 三份正式文档(项目书 v3 / 需求 v2 / 架构 v2) | ✅ 已完成 |
-| monorepo 骨架(4 apps + 1 package) | ✅ P1 完成 |
-| 后端 API(NestJS + Prisma + 业务接口) | 🚧 P2 待开始 |
-| Admin 真实功能 | 🚧 P3 待开始 |
-| miniapp 接 API | 🚧 P4 待开始 |
-| 摄像头接萤石云 | 🚧 P5 待开始 |
-| C 端 Web Portal(独立 Vue 3) | 🚧 P6 待开始 |
+| 三份正式文档(项目书 v3 / 需求 v2 / 架构 v2),md + docx 双份 | ✅ |
+| C 端 miniapp(Taro 4 + Vue 3,17 页面) | ✅ 16/17 走真后端,只剩 my-plot 等 P5 摄像头 |
+| 后端 API(NestJS + Prisma,9 个业务模块 + JWT 鉴权) | ✅ |
+| 数据库(SQLite 开发 / 切 MySQL 改 3 行配置) | ✅ |
+| Admin 后台(Vue 3 + Element Plus) | 🟡 套餐展示 OK,真 CRUD 待 P3 |
+| Cloudflare Pages 静态部署 | 🟡 早期 mock 版部署在 cloud-farm-web.pages.dev,真后端版部署待 |
+| 摄像头接萤石云 | 🚧 P5 待做(my-plot 还在 mock 占位) |
+| C 端 Web Portal(独立 Vue 3,大屏看摄像头) | 🚧 P6 待做(用户决定暂缓) |
 
 ## 技术栈
 
-- **monorepo**: pnpm workspace
-- **微信小程序**: Taro 4 + Vue 3 + Pinia
-- **C 端 H5(临时,等 P6 拆出独立 Web Portal)**: Vite 4(同源 miniapp 编译)
+- **monorepo**: pnpm workspace(4 apps + 3 packages)
+- **微信小程序**: Taro 4 + Vue 3 + Pinia + vue-router
+- **C 端 H5(临时,等 P6 拆出独立 Web Portal)**: Vite 4 同源 miniapp 编译
 - **B 端 Admin**: Vue 3 + Vite + Element Plus
-- **后端**: NestJS 10 + Prisma(P2) + MySQL 8 + Redis 7(可选)
+- **后端**: NestJS 10 + Prisma 6 + JWT(passport-jwt)+ class-validator + Swagger
+- **数据库**: SQLite(本地开发)/ MySQL 8(生产,切 datasource provider 即可)
 - **摄像头**: 萤石云 OpenAPI(P5)
-- **支付**: 微信支付(P5+)
+- **支付**: 微信支付(P5+,需要营业执照 + 食品证 + 商户号)
 
 ## 快速开始
 
 ```bash
+# 一次性环境(每台机器装一次):Node 20 + pnpm 10
 git clone https://github.com/Bondma1234/cloud-farm.git
 cd cloud-farm
-
-# 一次装好所有 app 依赖
 pnpm install
 
-# (可选)起本地 MySQL + Redis
-docker compose up -d
+# 后端首次初始化(一次)
+cd apps/api
+cp .env.example .env
+pnpm exec prisma migrate dev    # 建 SQLite 表
+pnpm db:seed                     # 灌种子数据(3 套餐 + 12 地块 + demo 用户 + 6 动态 + 8 作物 + ...)
+cd ../..
 
-# 启动单个 app
-pnpm dev:miniapp     # http://localhost:5180   (C 端 H5 / 小程序源码)
-pnpm dev:admin       # http://localhost:5183   (B 端后台)
-pnpm dev:api         # http://localhost:3000   (后端 API,/api/health)
-
-# build 全部 app
-pnpm build:all
+# 启动 3 个服务(各开一个终端)
+pnpm dev:api          # http://localhost:3000/api/health   + /api/docs (Swagger)
+pnpm dev:miniapp      # http://localhost:5180  (C 端 H5)
+pnpm dev:admin        # http://localhost:5183  (B 端后台)
 ```
+
+## 演示完整购买闭环(本仓库的"杀手级 demo")
+
+启动 API + miniapp 后,浏览器打开 <http://localhost:5180/>:
+
+1. 进 **"我的"** tab → 点头像区域去登录页
+2. 手机号填 `13800000001` → 同意协议 → 点"获取验证码"(自动填 `123456`)→ 登录
+3. 拿到 JWT,跳回首页
+4. 进 **"认养" tab** → 看到 3 个真套餐(SQLite 数据)
+5. 点 **"进阶版 · 15㎡"** → 详情页 → **选地块** → 12 块网格(已售置灰)
+6. 选一块 available 的 → **"确定并结算"** → checkout 页
+7. 顶部地址栏显示真实 demo 地址(可点击换地址)
+8. 选 1-2 个作物 → 点 **"提交订单"**
+9. 看到 `订单 ORD-2026-XXXXXX 创建成功` → 自动跳订单详情
+10. 进 **"我的" → "全部订单"** → 看到刚创建的订单出现在列表里
+11. 同时去 admin 后台(<http://localhost:5183>)→ 套餐管理可看到真实数据
+
+整条链路:**Vue 3 → axios + 拦截器 → vite proxy → NestJS Controller → Prisma 事务 → SQLite**,**没有一个 mock**,而且 `POST /api/orders` 用事务保证两个用户同时点同一地块**有且只有一个能成功**(409 冲突防双倍认养)。
 
 ## 仓库结构
 
 ```
 cloud-farm/
 ├── apps/
-│   ├── miniapp/        # Taro 4 + Vue 3       微信小程序 + H5
-│   ├── api/            # NestJS 10            后端 API
-│   ├── admin/          # Vue 3 + Element Plus B 端后台
+│   ├── miniapp/        # Taro 4 + Vue 3       C 端微信小程序 + H5(主战场)
+│   ├── api/            # NestJS 10            后端 API(9 模块 + JWT)
+│   ├── admin/          # Vue 3 + Element Plus B 端运营后台
 │   └── web/  🚧 P6      # Vue 3 + Vite         C 端 Web Portal(待拆)
 ├── packages/
-│   ├── shared/         # TS 类型 + 业务常量 + 纯函数(三端共用)
-│   ├── ui-tokens/  🚧   # 设计 token (P6)
-│   └── api-client/  🚧  # 自动生成 SDK (P2)
-├── docker-compose.yml  # 本地 MySQL + Redis
-├── 01_项目书_v3.{md,docx}      # 商业计划书
-├── 02_需求说明书_v2.{md,docx}   # 需求清单
-├── 03_软件架构图_v2.{md,docx}   # 软件架构
+│   ├── shared/         # TS 类型 + 业务常量 + 纯函数(四端共用)
+│   ├── api-client/     # ✅ axios + 拦截器 + 全套 SDK(auth/users/orders/.../plots)
+│   └── ui-tokens/  🚧   # 设计 token(P6 抽出来)
+├── docker-compose.yml  # MySQL 8 + Redis 7(切生产时启)
+├── pnpm-workspace.yaml
+├── 01_项目书_v3.{md,docx}      # 商业计划书 v3(当前)
+├── 02_需求说明书_v2.{md,docx}   # 需求清单 v2(当前)
+├── 03_软件架构图_v2.{md,docx}   # 软件架构 v2(当前)
 ├── md_to_docx.js       # md → docx 一键脚本
-├── CLAUDE.md           # 项目记忆 / 架构约定
+├── CLAUDE.md           # 项目记忆 / 架构约定 / 当前进度(主备份)
 └── README.md
 ```
 
-## C 端已完成页面(17 个)
+## 后端模块清单
 
-| 模块 | 页面 |
-|---|---|
-| 用户 | login |
-| 首页 | home |
-| 认养 | packages / package-detail / plot-picker / checkout |
-| 我的田 | my-plot / commands(指令历史) |
-| 内容 | journal(田园动态) / crops(作物百科) / photos(照片墙) |
-| 订单 | orders / order-detail |
-| 地址 | address / address-edit |
-| 个人中心 | profile |
-| 直播(临时占位) | live(P5 改造为摄像头详情) |
+`apps/api/src/modules/` 下 9 个 NestJS 模块,全部带 Swagger 注解,见 `/api/docs`:
+
+| 模块 | 路由 | 鉴权 |
+|---|---|---|
+| Auth | POST `/api/auth/login`(mock SMS,任意 6 位数字) | 公开 |
+| User | GET `/api/users/me`,Address CRUD | JWT |
+| Package | GET `/api/packages` | 公开 |
+| Plot | GET `/api/plots[/available][/:id]` | 公开 |
+| Order | GET `/api/orders`,GET `/api/orders/:id`,**POST 创建**,**PATCH cancel** | JWT |
+| Camera | (P5 待做,接萤石云 OpenAPI) | JWT |
+| Journal | GET `/api/journal[?type=&plotId=]` + `:id` | 公开 |
+| Crop | GET `/api/crops[?season=]` + `:id` | 公开 |
+| Photo | GET `/api/photos`(at 已格式化"刚刚 / X 天前") | 公开 |
+| Command | GET `/api/commands[?type=]`(只返当前用户的) | JWT |
+
+横切关注:全局 `ValidationPipe` + `TransformInterceptor`(统一 `{code,message,data}` 包装)+ `AllExceptionsFilter` + CORS + Swagger。
+
+## C 端 17 个页面
+
+| 模块 | 页面 | 状态 |
+|---|---|---|
+| 用户 | login | ✅ 真 JWT 登录 |
+| 首页 | home | ✅ 真套餐 + 真动态 feed |
+| 认养 | packages / package-detail / **plot-picker** / **checkout** | ✅ 全套真接口,**完整下单** |
+| 我的田 | my-plot | 🚧 mock(等 P5 摄像头) |
+| 我的田 | commands(指令历史) | ✅ 真指令 |
+| 内容 | journal(动态)/ crops(作物百科)/ photos(照片墙) | ✅ |
+| 订单 | orders / order-detail | ✅(取消订单走真接口) |
+| 地址 | address / address-edit | ✅ POST/PATCH/DELETE 全真 |
+| 个人中心 | profile | ✅ 真用户 + 4 张统计卡 |
+| 直播 | live(临时占位) | 🚧 P5 改造为摄像头详情 |
+
+## 进度路线图(架构 v2 §10)
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| **P1** 架构地基 | pnpm workspace + apps/api/admin/miniapp + packages/shared + docker-compose | ✅ |
+| **P2** API 最小切口 | NestJS + Prisma + 7 张表 + GET /api/packages + Swagger + ValidationPipe | ✅ |
+| **P2+B** Admin 端到端打通 | packages/api-client + Admin 显示真实套餐 | ✅ |
+| **P4-C** miniapp 套餐接 API | home / packages / package-detail / checkout 走真 API + mock 兜底 | ✅ |
+| **P2+D** 后端扩 Auth + User + Order | JWT + /users/me + /users/me/addresses + /orders | ✅ |
+| **P4-E** miniapp 接 Auth/User/Order | login / profile / orders / order-detail / address 5 页接真 API | ✅ |
+| **P4-G** 内容模块全打通 | Journal/Crop/Photo/Command 4 模块 + 4 页接真 API | ✅ |
+| **P4-H** 业务流程闭环 | Plot/Address CRUD/Order create+cancel + 5 页全接,完整购买链路 | ✅ |
+| **P3** Admin 完整版 | 真 JWT 登录 + 套餐 CRUD + 订单管理(B 端管所有用户) | 🚧 待开始 |
+| **P5** 摄像头接萤石云 | my-plot 接真摄像头 + EZOPEN 播流 + 拍照抓帧 | 🚧 待开始(需要先注册萤石账号) |
+| **P6** C 端 Web Portal 拆分 | apps/web/ 独立 Vue 3,大屏看监控 | 🚧 待开始(用户决定暂缓) |
+| **P7** 部署上云 | 域名 / ICP / ECS / Docker / 微信支付商户号 | 🚧 待开始(法务先行) |
+
+完整架构变更历史与 ADR 见 [`03_云上田园_软件架构图_v2.md`](./03_云上田园_软件架构图_v2.md)。
+
+## 数据库切换:开发 SQLite → 生产 MySQL
+
+只改 3 处即可上生产:
+
+1. `apps/api/prisma/schema.prisma` 第 12 行:`provider = "sqlite"` → `"mysql"`
+2. `apps/api/.env` 的 `DATABASE_URL`:`file:./dev.db` → `mysql://user:pwd@host:3306/cloud_farm`
+3. `pnpm exec prisma migrate deploy && pnpm db:seed`
+
+业务代码 0 改动,Prisma Client 屏蔽方言差异。schema.prisma 里只用跨方言安全的字段类型(JSON 数组用 String 存,Decimal 走 Prisma 抽象)。详见 [CLAUDE.md §2](./CLAUDE.md)。
 
 ## 协作约定
 
@@ -92,10 +161,11 @@ cloud-farm/
 
 特别注意:
 
-- **monorepo 用 pnpm**,根目录 `pnpm install` 一次装好所有
+- **monorepo 用 pnpm**,根目录 `pnpm install` 一次装好所有 4 apps + 3 packages
 - **三份正式文档以 v 当前为准**(项目书 v3 / 需求 v2 / 架构 v2),v1/v2 历史保留 + 头部 superseded 标记
 - **图片必须经过 `apps/miniapp/src/mock/images.js`**,不要在组件里写字面量
 - **miniapp 三层浏览器补丁**(`<image>→<img>` / `@tap` 桥接 / `<scroll-view>` 滚轮拖拽)在 `main.web.js`,不要误删
+- **添加新 API 模块**:NestJS module → packages/api-client SDK → miniapp/admin store → 页面接入,4 步标准流程,见架构 v2
 
 ## License
 
