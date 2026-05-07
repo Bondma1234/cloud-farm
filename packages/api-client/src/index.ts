@@ -13,3 +13,7 @@ export * from './api/auth';
 export * from './api/users';
 export * from './api/orders';
 export * from './api/packages';
+export * from './api/journal';
+export * from './api/crops';
+export * from './api/photos';
+export * from './api/commands';

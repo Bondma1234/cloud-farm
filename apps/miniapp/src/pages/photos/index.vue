@@ -68,13 +68,17 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { ref, computed } from 'vue';
-import { PHOTO_WALL } from '../../stores/mock';
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { usePhotoStore } from '../../stores/photos';
 
-const photos = PHOTO_WALL;
+const photoStore = usePhotoStore();
+const { list: photos } = storeToRefs(photoStore);
 const mode = ref('grid');
 
-const totalLikes = computed(() => photos.reduce((s, p) => s + (p.likes || 0), 0));
+const totalLikes = computed(() => photos.value.reduce((s, p) => s + (p.likes || 0), 0));
+
+onMounted(() => photoStore.fetch());
 
 const openFeed = (p) => {
   mode.value = 'feed';

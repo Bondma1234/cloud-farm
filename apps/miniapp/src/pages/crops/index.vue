@@ -69,10 +69,14 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { ref, computed } from 'vue';
-import { CROPS_CATALOG } from '../../stores/mock';
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useCropStore } from '../../stores/crops';
 
-const crops = CROPS_CATALOG;
+const cropStore = useCropStore();
+const { list: crops } = storeToRefs(cropStore);
+
+onMounted(() => cropStore.fetch());
 
 const SEASONS = [
   { key: 'all',     label: '全部' },
@@ -84,8 +88,8 @@ const SEASONS = [
 
 const active = ref('all');
 const filtered = computed(() => {
-  if (active.value === 'all') return crops;
-  return crops.filter(c => c.season.includes(active.value));
+  if (active.value === 'all') return crops.value;
+  return crops.value.filter(c => c.season.includes(active.value));
 });
 
 const openDetail = (c) => {

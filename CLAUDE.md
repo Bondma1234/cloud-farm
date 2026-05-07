@@ -271,7 +271,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - **seed 扩展**:demo 用户 + 2 收货地址 + 3 订单(覆盖 growing/delivering/pending 状态)
   - **api-client 扩展**:加 `auth.ts` / `users.ts` / `orders.ts`,http.ts 加 `setAccessToken/getAccessToken`(localStorage 持久化)
   - **9 项 curl 闭环全过**:无 token 401 / 登录拿 token / /me / /addresses / /orders / 详情 / 状态过滤 / 错误码 401
-- **★ P4-E miniapp 接 Auth + User + Order(本次)** ——
+- **P4-E miniapp 接 Auth + User + Order** ——
   - **API 调整**:OrderService.toDto 把 metadata JSON 解出来后**平铺**到顶层(subItems / timeline / logistics / expireIn / canReview),前端不用 `.meta.xxx` 二级访问
   - **stores/mock.js 的 useAppStore 重构**:加 `bootstrap()` / `loginReal(phone, code)` / `fetchAddresses()` / `logoutReal()` 真接口 actions,旧 `loginMock/logoutMock` 改为委托
   - **新建 stores/orders.js**(同 packages.js 套路):`fetch()` / `fetchOne(id)` + 30s 缓存 + mock fallback + source 标记
@@ -284,6 +284,25 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - **api-client 默认实例**:`http.ts` 加内置 token 管理(localStorage 持久化),`login()` 自动写 token,刷新页面自动恢复登录态
   - **5 页端到端验收全过**(填手机号 → 同意协议 → 验证码自动填 → 真 JWT 登录 → home/profile/orders/order-detail/address 真数据)
   - H5 build:123 modules(P4-C 后 +4),gzip 46KB JS / 9KB CSS
+- **★ P4-G 内容模块全打通(本次)** ——
+  - **schema 扩展**:加 `Crop` / `PhotoPost` / `Command` 三张表,migration `add_crop_photo_command` 落地(Journal 表本来就在)
+  - **seed 扩展**:6 田园动态 + 8 作物 + 8 照片墙帖子 + 6 指令工单(全部对齐 mock 数据)
+  - **NestJS 加 4 模块**:
+    - `JournalModule`: `GET /api/journal?type=&plotId=` + `GET /api/journal/:id`(公开,不需登录)
+    - `CropModule`: `GET /api/crops?season=` + `GET /api/crops/:id`(公开)
+    - `PhotoModule`: `GET /api/photos`(公开,服务端时间已格式化为"刚刚/X小时前")
+    - `CommandModule`: `GET /api/commands?type=`(需 JWT,只返当前用户的)
+  - **api-client 加 4 SDK**:`journal.ts` / `crops.ts` / `photos.ts` / `commands.ts`
+  - **miniapp 加 4 stores**(同 packages.js 套路):journal / crops / photos / commands
+  - **4 页改造**:journal / crops / photos / commands 全部从 mock 切到 store,各自 onMounted fetch
+  - **bug fix**:journal/crops 两页的 `filtered` computed 漏写 `.value`(用 storeToRefs 后 ref 解包要明确),已修
+  - **e2e 验收全过**:journal 6/crops 8/photos 8/commands 6 全部从 SQLite 真出
+  - H5 build:131 modules(P4-E 后 +8),gzip 46.6 KB JS / 9.3 KB CSS
+
+至此 **miniapp 17 个页面里 14 个走真后端**,只剩 3 个还在 mock:
+- `my-plot`(我的田)— 等 P5 摄像头接萤石云一起做
+- `plot-picker`(选地块)— 等 P2++ 加 PlotModule
+- `address-edit`(编辑地址)— 等 P2++ 加 Address CRUD
 
 🚧 **下一步路线**(架构 v2 §10)
 
@@ -295,8 +314,9 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P4-C miniapp 套餐接 API** | home / packages / package-detail / checkout 走真 API + mock 兜底 | ✅ 已完成 |
 | **P2+D Auth + User + Order** | JWT + 登录 + /users/me + /users/me/addresses + /orders | ✅ 已完成 |
 | **P4-E miniapp 接 Auth/User/Order** | login/profile/orders/order-detail/address 5 页接真 API + mock fallback | ✅ 已完成 |
+| **P4-G 内容模块全打通** | Journal/Crop/Photo/Command 4 模块 + 4 页接真 API | ✅ 已完成 |
 | **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理 | 待开始 |
-| **P4+ miniapp 其余模块接 API** | 我的田 / 动态 / 摄像头 / 作物百科(等 P5 后端) | 待开始 |
+| **P2++ 补 Plot / Address CRUD** | 给 plot-picker / address-edit 接真接口 | 待开始 |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |

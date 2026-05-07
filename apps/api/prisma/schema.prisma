@@ -140,3 +140,64 @@ model JournalEntry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ============ Crop(作物百科) ============
+// 农场可种作物清单,展示在 miniapp /pages/crops/
+// 每个作物对应推荐套餐(冗余存储 packageRefs JSON 数组,跨方言安全)
+model Crop {
+  id            String   @id // 'crop-tomato' / 'crop-strawberry' ...
+  name          String
+  emoji         String
+  cover         String
+  season        String   // 春秋 / 夏秋 / 冬春 / 春季 / 秋种春收
+  difficulty    Int      @default(1) // 1-5 星
+  daysToHarvest String
+  yieldPerSqm   String
+  intro         String
+  tags          String   // JSON 数组(string[])
+  recommendPkg  String   // JSON 数组(string[]),记套餐名 ('基础版'/'进阶版'/'亲子版')
+  status        String   @default("active") // active / archived
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ============ PhotoPost(用户照片墙) ============
+// 用户晒地块/收获/亲子互动的照片
+model PhotoPost {
+  id        String   @id // 'pw-001'
+  userName  String   // 发布者昵称(冗余存,简化查询)
+  userIcon  String   // emoji avatar
+  photo     String   // 主图 URL
+  caption   String
+  plotId    String?
+  crop      String?
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  at        DateTime
+  status    String   @default("active") // active / removed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============ Command(指令工单) ============
+// 用户在"我的田"发的浇水/施肥/拍照等指令
+// 农技员在 admin 端执行后回填 photo + completedAt
+model Command {
+  id          String    @id // 'c-2026-0427-01'
+  userId      Int
+  type        String    // water / fertilize / weed / shoot
+  icon        String
+  label       String
+  plotId      String
+  requestedAt DateTime
+  completedAt DateTime?
+  status      String    @default("pending") // pending / executing / completed / rejected
+  statusLabel String    @default("待执行")
+  by          String?   // 农技员姓名
+  note        String    @default("")
+  photo       String?   // 完成回填照片 URL
+  cost        Int       @default(0) // 元
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

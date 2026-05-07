@@ -84,10 +84,14 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { ref, computed } from 'vue';
-import { COMMAND_HISTORY } from '../../stores/mock';
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAppStore } from '../../stores/mock';
+import { useCommandStore } from '../../stores/commands';
 
-const all = COMMAND_HISTORY;
+const appStore = useAppStore();
+const commandStore = useCommandStore();
+const { list: all } = storeToRefs(commandStore);
 
 const TYPES = [
   { key: 'all',       icon: '📋', label: '全部' },
@@ -99,15 +103,19 @@ const TYPES = [
 
 const active = ref('all');
 const filtered = computed(() =>
-  active.value === 'all' ? all : all.filter(c => c.type === active.value)
+  active.value === 'all' ? all.value : all.value.filter(c => c.type === active.value)
 );
 
 const stats = computed(() => ({
-  total: all.length,
-  completed: all.filter(c => c.status === 'completed').length,
-  executing: all.filter(c => c.status === 'executing').length,
-  cost: all.reduce((s, c) => s + (c.cost || 0), 0)
+  total: all.value.length,
+  completed: all.value.filter(c => c.status === 'completed').length,
+  executing: all.value.filter(c => c.status === 'executing').length,
+  cost: all.value.reduce((s, c) => s + (c.cost || 0), 0)
 }));
+
+onMounted(() => {
+  appStore.bootstrap().finally(() => commandStore.fetch());
+});
 
 const preview = (c) => {
   if (Taro.previewImage && c.photo) {

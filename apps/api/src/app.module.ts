@@ -6,6 +6,10 @@ import { PackageModule } from './modules/package/package.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { OrderModule } from './modules/order/order.module';
+import { JournalModule } from './modules/journal/journal.module';
+import { CropModule } from './modules/crop/crop.module';
+import { PhotoModule } from './modules/photo/photo.module';
+import { CommandModule } from './modules/command/command.module';
 
 @Module({
   imports: [
@@ -18,6 +22,10 @@ import { OrderModule } from './modules/order/order.module';
     UserModule,
     OrderModule,
     PackageModule,
+    JournalModule,
+    CropModule,
+    PhotoModule,
+    CommandModule,
   ],
   controllers: [HealthController],
   providers: [],

@@ -72,10 +72,14 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { ref, computed } from 'vue';
-import { JOURNAL_ENTRIES } from '../../stores/mock';
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useJournalStore } from '../../stores/journal';
 
-const entries = JOURNAL_ENTRIES;
+const journalStore = useJournalStore();
+const { list: entries } = storeToRefs(journalStore);
+
+onMounted(() => journalStore.fetch());
 
 const TYPES = [
   { key: 'all',       icon: '📋', label: '全部' },
@@ -89,7 +93,7 @@ const TYPES = [
 
 const active = ref('all');
 const filtered = computed(() =>
-  active.value === 'all' ? entries : entries.filter(e => e.type === active.value)
+  active.value === 'all' ? entries.value : entries.value.filter(e => e.type === active.value)
 );
 
 const preview = (urls, current) => {
