@@ -258,7 +258,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - packages 页 ⚠️ 警告条提示后端未连接 + 重试
   - vite.config.js 加 proxy `/api → :3000`
   - 三态闭环验收(在线/挂了/恢复)全过
-- **★ P2+D 后端扩 Auth + User + Order(本次)** ——
+- **P2+D 后端扩 Auth + User + Order** ——
   - 装 `@nestjs/jwt` + `@nestjs/passport` + `passport-jwt`
   - 新增 `common/auth/`:JwtPayload / JwtStrategy / JwtAuthGuard / @CurrentUser()
   - 新增 **AuthModule**:`POST /api/auth/login`(mock SMS,任意 6 位数字通过) → 签 access(15m) + refresh(7d) JWT
@@ -271,6 +271,19 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - **seed 扩展**:demo 用户 + 2 收货地址 + 3 订单(覆盖 growing/delivering/pending 状态)
   - **api-client 扩展**:加 `auth.ts` / `users.ts` / `orders.ts`,http.ts 加 `setAccessToken/getAccessToken`(localStorage 持久化)
   - **9 项 curl 闭环全过**:无 token 401 / 登录拿 token / /me / /addresses / /orders / 详情 / 状态过滤 / 错误码 401
+- **★ P4-E miniapp 接 Auth + User + Order(本次)** ——
+  - **API 调整**:OrderService.toDto 把 metadata JSON 解出来后**平铺**到顶层(subItems / timeline / logistics / expireIn / canReview),前端不用 `.meta.xxx` 二级访问
+  - **stores/mock.js 的 useAppStore 重构**:加 `bootstrap()` / `loginReal(phone, code)` / `fetchAddresses()` / `logoutReal()` 真接口 actions,旧 `loginMock/logoutMock` 改为委托
+  - **新建 stores/orders.js**(同 packages.js 套路):`fetch()` / `fetchOne(id)` + 30s 缓存 + mock fallback + source 标记
+  - **5 页面改造完毕**:
+    - `login`:走 `store.loginReal(phone, code)`,失败兜底 mock
+    - `profile`:`onMounted` bootstrap + 拉 orders,顶部用户名 / 4 张统计卡 / 订单缩略全真
+    - `orders`:列表全从 store,状态 tab 过滤可用,待付款 badge 真实
+    - `order-detail`:订单 + subItems + timeline + logistics 全从 API
+    - `address`:列表从 `/users/me/addresses`,默认地址置顶
+  - **api-client 默认实例**:`http.ts` 加内置 token 管理(localStorage 持久化),`login()` 自动写 token,刷新页面自动恢复登录态
+  - **5 页端到端验收全过**(填手机号 → 同意协议 → 验证码自动填 → 真 JWT 登录 → home/profile/orders/order-detail/address 真数据)
+  - H5 build:123 modules(P4-C 后 +4),gzip 46KB JS / 9KB CSS
 
 🚧 **下一步路线**(架构 v2 §10)
 
@@ -281,8 +294,9 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P2+B Admin 端到端打通** | packages/api-client + Admin 显示真实套餐 | ✅ 已完成 |
 | **P4-C miniapp 套餐接 API** | home / packages / package-detail / checkout 走真 API + mock 兜底 | ✅ 已完成 |
 | **P2+D Auth + User + Order** | JWT + 登录 + /users/me + /users/me/addresses + /orders | ✅ 已完成 |
+| **P4-E miniapp 接 Auth/User/Order** | login/profile/orders/order-detail/address 5 页接真 API + mock fallback | ✅ 已完成 |
 | **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理 | 待开始 |
-| **P4+ miniapp 其余模块接 API** | login / orders / address 切真 API,订单详情 / 我的田 / 动态 等 | 待开始 |
+| **P4+ miniapp 其余模块接 API** | 我的田 / 动态 / 摄像头 / 作物百科(等 P5 后端) | 待开始 |
 | **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |

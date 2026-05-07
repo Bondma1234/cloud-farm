@@ -11,16 +11,26 @@ export class OrderListQueryDto {
   status?: string;
 }
 
-export class OrderItemMetaDto {
-  @ApiProperty({ required: false }) timeline?: { at: string; event: string; done: boolean }[];
-  @ApiProperty({ required: false }) logistics?: {
-    company: string;
-    no: string;
-    nodes: { at: string; node: string }[];
-  };
-  @ApiProperty({ required: false }) subItems?: { label: string; value: string }[];
-  @ApiProperty({ required: false }) expireIn?: string;
-  @ApiProperty({ required: false }) canReview?: boolean;
+export class OrderTimelineNodeDto {
+  @ApiProperty() at!: string;
+  @ApiProperty() event!: string;
+  @ApiProperty() done!: boolean;
+}
+
+export class OrderLogisticsNodeDto {
+  @ApiProperty() at!: string;
+  @ApiProperty() node!: string;
+}
+
+export class OrderLogisticsDto {
+  @ApiProperty() company!: string;
+  @ApiProperty() no!: string;
+  @ApiProperty({ type: [OrderLogisticsNodeDto] }) nodes!: OrderLogisticsNodeDto[];
+}
+
+export class OrderSubItemDto {
+  @ApiProperty() label!: string;
+  @ApiProperty() value!: string;
 }
 
 export class OrderDto {
@@ -60,6 +70,19 @@ export class OrderDto {
   @ApiProperty({ required: false })
   addressId?: string;
 
-  @ApiProperty({ type: () => OrderItemMetaDto, required: false })
-  meta?: OrderItemMetaDto;
+  // ---- 以下字段从 metadata JSON 解出来,平铺到顶层方便前端用 ----
+  @ApiProperty({ type: [OrderSubItemDto], required: false })
+  subItems?: OrderSubItemDto[];
+
+  @ApiProperty({ type: [OrderTimelineNodeDto], required: false })
+  timeline?: OrderTimelineNodeDto[];
+
+  @ApiProperty({ type: OrderLogisticsDto, required: false })
+  logistics?: OrderLogisticsDto;
+
+  @ApiProperty({ required: false, description: '待付款倒计时' })
+  expireIn?: string;
+
+  @ApiProperty({ required: false, description: '已完成订单是否可评价' })
+  canReview?: boolean;
 }

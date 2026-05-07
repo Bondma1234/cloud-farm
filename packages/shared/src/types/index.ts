@@ -74,7 +74,7 @@ export type OrderStatus = 'pending' | 'shipped' | 'delivering' | 'completed' | '
 
 export interface Order {
   id: string;
-  type: '认养' | '产地直送';
+  type: '认养' | '产地直送' | string;
   typeIcon: string;
   title: string;
   cover: string;
@@ -83,7 +83,8 @@ export interface Order {
   status: OrderStatus;
   statusLabel: string;
   date: string;
-  addressId: string;
+  packageId?: string;
+  addressId?: string;
   subItems?: { label: string; value: string }[];
   timeline?: { at: string; event: string; done: boolean }[];
   logistics?: {

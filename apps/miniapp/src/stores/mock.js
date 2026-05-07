@@ -521,14 +521,25 @@ export const PHOTO_WALL = [
   }
 ];
 
-// ============ Store：用户登录态 + 临时数据 ============
+// ============ Store: 登录态 + 用户信息 + 地址 ============
+// P4-E 改造: 优先走真后端 API, 失败 fallback 到 mock 数据。
+//   - bootstrap(): 启动时如果 localStorage 有 token, 拉 /me + /addresses
+//   - loginReal(phone, code): 调真接口签 JWT, 自动同步用户信息
+//   - logoutReal(): 清 token + 重置 mock 默认值
+//   - 老的 loginMock / logoutMock 还在(签名不变), 内部委托给 real 版本
+
+import { login as apiLogin, logout as apiLogout, getMe, listMyAddresses, getAccessToken } from '@cloud-farm/api-client';
+
 export const useAppStore = defineStore('app', {
   state: () => ({
     user: { nickname: '田园小掌柜', avatar: '🧑‍🌾', level: 'Lv.2', phone: '138****5412' },
-    isLoggedIn: true,    // Demo 默认已登录；可在 login 页 mock 切换
+    isLoggedIn: true,        // Demo 默认已登录;可在 login 页 mock 切换
     cart: [],
     addresses: [...ADDRESSES],
-    defaultAddressId: 'addr-1'
+    defaultAddressId: 'addr-1',
+    // P4-E 新加:
+    isApiAuth: false,        // 当前会话是不是走的真 JWT(true=真接口, false=mock 状态)
+    bootstrapped: false      // 启动时是否已尝试恢复登录
   }),
   getters: {
     defaultAddress(state) {
@@ -536,12 +547,81 @@ export const useAppStore = defineStore('app', {
     }
   },
   actions: {
+    /** 应用启动时调一次:如有 token, 验证并拉用户/地址 */
+    async bootstrap() {
+      if (this.bootstrapped) return;
+      this.bootstrapped = true;
+      const token = getAccessToken();
+      if (!token) return;
+      try {
+        const me = await getMe();
+        this.user = {
+          nickname: me.nickname,
+          avatar: me.avatar,
+          level: me.level,
+          phone: me.phone
+        };
+        this.isLoggedIn = true;
+        this.isApiAuth = true;
+        await this.fetchAddresses();
+      } catch {
+        // token 失效或网络错: 静默回退到 mock,下次让用户重新登录
+        apiLogout();
+      }
+    },
+
+    /** 真登录: 走 /api/auth/login,成功后拉地址 */
+    async loginReal(phone, code) {
+      const data = await apiLogin({ phone, code });
+      this.user = {
+        nickname: data.user.nickname,
+        avatar: data.user.avatar,
+        level: data.user.level,
+        phone: phone.slice(0, 3) + '****' + phone.slice(7)
+      };
+      this.isLoggedIn = true;
+      this.isApiAuth = true;
+      // 异步拉地址,失败用 mock 兜底
+      this.fetchAddresses().catch(() => {});
+      return data;
+    },
+
+    /** 拉当前用户地址列表(真后端),失败保留 mock */
+    async fetchAddresses() {
+      try {
+        const list = await listMyAddresses();
+        if (list && list.length) {
+          this.addresses = list;
+          const def = list.find(a => a.isDefault);
+          if (def) this.defaultAddressId = def.id;
+        }
+      } catch {
+        /* 静默,保留 mock 地址展示 */
+      }
+    },
+
+    /** 退出登录(真): 清 token + 重置 mock 状态 */
+    logoutReal() {
+      apiLogout();
+      this.isLoggedIn = false;
+      this.isApiAuth = false;
+      this.user = { nickname: '田园小掌柜', avatar: '🧑‍🌾', level: 'Lv.2', phone: '138****5412' };
+      this.addresses = [...ADDRESSES];
+      this.defaultAddressId = 'addr-1';
+    },
+
     addToCart(item) { this.cart.push(item); },
+
+    /** @deprecated P4-E 起改走 loginReal,本方法保留作 mock 兜底 */
     loginMock(phone) {
       this.isLoggedIn = true;
       if (phone) this.user.phone = phone.slice(0, 3) + '****' + phone.slice(7);
     },
-    logoutMock() { this.isLoggedIn = false; },
+    /** @deprecated P4-E 起改走 logoutReal,本方法保留作 mock 兜底 */
+    logoutMock() {
+      this.logoutReal();
+    },
+
     upsertAddress(addr) {
       const i = this.addresses.findIndex(a => a.id === addr.id);
       if (i >= 0) this.addresses.splice(i, 1, addr);

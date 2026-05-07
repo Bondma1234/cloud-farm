@@ -39,27 +39,32 @@ export class OrderService {
     packageId: string | null;
     addressId: string | null;
     metadata: string | null;
-  }): OrderDto => ({
-    id: r.id,
-    type: r.type,
-    typeIcon: r.typeIcon,
-    title: r.title,
-    cover: r.cover,
-    price: r.price,
-    count: r.count,
-    status: r.status,
-    statusLabel: r.statusLabel,
-    date: r.date.toISOString().slice(0, 10),
-    packageId: r.packageId ?? undefined,
-    addressId: r.addressId ?? undefined,
-    meta: r.metadata ? this.safeParse(r.metadata) : undefined,
-  });
+  }): OrderDto => {
+    // metadata JSON 解出来后, 平铺到 DTO 顶层(subItems / timeline / logistics / expireIn / canReview)
+    // 前端就不用 o.meta.subItems 这种二级访问, 跟原 mock 数据形状一致
+    const meta = r.metadata ? this.safeParse(r.metadata) : {};
+    return {
+      id: r.id,
+      type: r.type,
+      typeIcon: r.typeIcon,
+      title: r.title,
+      cover: r.cover,
+      price: r.price,
+      count: r.count,
+      status: r.status,
+      statusLabel: r.statusLabel,
+      date: r.date.toISOString().slice(0, 10),
+      packageId: r.packageId ?? undefined,
+      addressId: r.addressId ?? undefined,
+      ...meta,
+    };
+  };
 
-  private safeParse(s: string): Record<string, unknown> | undefined {
+  private safeParse(s: string): Record<string, unknown> {
     try {
-      return JSON.parse(s);
+      return JSON.parse(s) as Record<string, unknown>;
     } catch {
-      return undefined;
+      return {};
     }
   }
 }

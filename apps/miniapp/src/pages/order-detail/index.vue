@@ -152,17 +152,27 @@
 
 <script setup>
 import Taro, { useRouter } from '@tarojs/taro';
-import { computed } from 'vue';
-import { useAppStore, ORDERS } from '../../stores/mock';
+import { computed, onMounted, ref } from 'vue';
+import { useAppStore } from '../../stores/mock';
+import { useOrderStore } from '../../stores/orders';
 
 const router = useRouter();
 const store = useAppStore();
+const orderStore = useOrderStore();
 const orderId = computed(() => router.params?.id || '');
 
-const order = computed(() => ORDERS.find(o => o.id === orderId.value));
+const order = ref(null);
+
 const address = computed(() => {
   if (!order.value?.addressId) return null;
   return store.addresses.find(a => a.id === order.value.addressId);
+});
+
+onMounted(async () => {
+  await store.bootstrap();
+  // 如果 list 已经在(从 orders 页跳过来),先 fetch 占位
+  if (!orderStore.list.length) await orderStore.fetch();
+  order.value = await orderStore.fetchOne(orderId.value);
 });
 
 const STATUS_MAP = {

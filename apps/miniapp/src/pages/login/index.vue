@@ -72,37 +72,49 @@ const sendCode = () => {
     return;
   }
   if (countdown.value > 0) return;
+  // P4-E: 后端 mock 验证(任意 6 位数字通过), 这里 toast 仅是 UX 提示
+  // P5+ 接真短信时, 在这里 await 一个 /api/auth/send-code 再开始倒计时
   Taro.showToast({ title: `验证码已发送至 ${phone.value}`, icon: 'none' });
   countdown.value = 60;
   const timer = setInterval(() => {
     countdown.value -= 1;
     if (countdown.value <= 0) clearInterval(timer);
   }, 1000);
-  // mock：填充 888888 便于演示
-  setTimeout(() => { code.value = '888888'; }, 800);
+  // 演示用:自动填 123456(后端 mock 接受任意 6 位数字)
+  setTimeout(() => { code.value = '123456'; }, 800);
 };
 
-const doLogin = () => {
+const doLogin = async () => {
   if (!canLogin.value) {
     if (!canSend.value) return Taro.showToast({ title: '手机号不正确', icon: 'none' });
     if (code.value.length !== 6) return Taro.showToast({ title: '请输入 6 位验证码', icon: 'none' });
     if (!agreed.value) return Taro.showToast({ title: '请先阅读并同意用户协议', icon: 'none' });
   }
   Taro.showLoading({ title: '登录中...' });
-  setTimeout(() => {
-    store.loginMock(phone.value);
+  try {
+    // P4-E: 调真接口拿 JWT,后端会 upsert 用户,token 自动存 localStorage
+    await store.loginReal(phone.value, code.value);
     Taro.hideLoading();
     Taro.showToast({ title: '登录成功', icon: 'success' });
     setTimeout(() => Taro.switchTab({ url: '/pages/home/index' }), 800);
-  }, 600);
+  } catch (e) {
+    Taro.hideLoading();
+    // 后端挂了或验证码错 → 兜底用 mock 让演示能继续
+    const reason = e?.message || '后端未连接';
+    store.loginMock(phone.value);
+    Taro.showToast({ title: `${reason},已用 mock 登录`, icon: 'none' });
+    setTimeout(() => Taro.switchTab({ url: '/pages/home/index' }), 1200);
+  }
 };
 
 const wxLogin = () => {
   Taro.showLoading({ title: '调起微信授权...' });
   setTimeout(() => {
+    // 微信一键登录 P5+ 接 wx.login + 后端 /api/auth/wx-login
+    // 当前阶段直接 mock,token 不真实
     store.loginMock('13800001234');
     Taro.hideLoading();
-    Taro.showToast({ title: '微信登录成功', icon: 'success' });
+    Taro.showToast({ title: '微信登录成功(mock)', icon: 'success' });
     setTimeout(() => Taro.switchTab({ url: '/pages/home/index' }), 800);
   }, 700);
 };

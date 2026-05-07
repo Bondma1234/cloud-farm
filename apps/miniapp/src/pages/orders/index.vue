@@ -100,9 +100,16 @@
 </template>
 
 <script setup>
-import Taro from '@tarojs/taro';
-import { ref, computed } from 'vue';
-import { ORDERS } from '../../stores/mock';
+import Taro, { useRouter } from '@tarojs/taro';
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAppStore } from '../../stores/mock';
+import { useOrderStore } from '../../stores/orders';
+
+const router = useRouter();
+const appStore = useAppStore();
+const orderStore = useOrderStore();
+const { list: orders } = storeToRefs(orderStore);
 
 const TABS = [
   { key: 'all',        label: '全部' },
@@ -113,17 +120,21 @@ const TABS = [
   { key: 'growing',    label: '种植中' }
 ];
 
-const active = ref('all');
+const active = ref(router.params?.active || 'all');
 const activeLabel = computed(() => TABS.find(t => t.key === active.value)?.label || '');
 
 const filtered = computed(() => {
-  if (active.value === 'all') return ORDERS;
-  return ORDERS.filter(o => o.status === active.value);
+  if (active.value === 'all') return orders.value;
+  return orders.value.filter(o => o.status === active.value);
 });
 
 const counts = computed(() => ({
-  pending: ORDERS.filter(o => o.status === 'pending').length
+  pending: orders.value.filter(o => o.status === 'pending').length
 }));
+
+onMounted(() => {
+  appStore.bootstrap().finally(() => orderStore.fetch());
+});
 
 const back = () => Taro.navigateBack().catch(() => Taro.switchTab({ url: '/pages/profile/index' }));
 const contact = () => Taro.showToast({ title: '客服 400-8888-666', icon: 'none' });

@@ -113,12 +113,16 @@
 <script setup>
 import Taro from '@tarojs/taro';
 import { storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
-import { useAppStore, ORDERS } from '../../stores/mock';
+import { computed, onMounted, ref } from 'vue';
+import { useAppStore } from '../../stores/mock';
+import { useOrderStore } from '../../stores/orders';
 
 const store = useAppStore();
 const { user, isLoggedIn } = storeToRefs(store);
-const orders = ORDERS;
+
+// P4-E: 订单走 store(API + mock 兜底), 不再 import ORDERS 常量
+const orderStore = useOrderStore();
+const { list: orders } = storeToRefs(orderStore);
 
 const ORDER_TABS = [
   { key: 'all',        label: '全部' },
@@ -130,8 +134,13 @@ const ORDER_TABS = [
 const active = ref('all');
 const activeLabel = computed(() => ORDER_TABS.find(t => t.key === active.value)?.label || '');
 const filteredOrders = computed(() => {
-  if (active.value === 'all') return orders;
-  return orders.filter(o => o.status === active.value);
+  if (active.value === 'all') return orders.value;
+  return orders.value.filter(o => o.status === active.value);
+});
+
+onMounted(() => {
+  // 先尝试恢复登录(如果有 token), 再拉订单
+  store.bootstrap().finally(() => orderStore.fetch());
 });
 
 const menus = [

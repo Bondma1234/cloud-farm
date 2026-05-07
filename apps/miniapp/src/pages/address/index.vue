@@ -54,12 +54,19 @@
 
 <script setup>
 import Taro, { useRouter } from '@tarojs/taro';
+import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAppStore } from '../../stores/mock';
 
 const router = useRouter();
 const store = useAppStore();
 const { addresses } = storeToRefs(store);
+
+onMounted(async () => {
+  // P4-E: 进页面先 bootstrap 登录态, 再拉真实地址(失败保留 mock)
+  await store.bootstrap();
+  await store.fetchAddresses();
+});
 
 // select 模式：从结算页跳过来选地址
 const mode = router.params?.mode || '';
