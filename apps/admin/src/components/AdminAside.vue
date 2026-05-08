@@ -9,14 +9,10 @@
         <el-icon><Monitor /></el-icon>
         <span>工作台</span>
       </el-menu-item>
-      <el-sub-menu index="orders">
-        <template #title>
-          <el-icon><Tickets /></el-icon>
-          <span>订单中心</span>
-        </template>
-        <el-menu-item disabled>认养订单 (P3)</el-menu-item>
-        <el-menu-item disabled>商城订单 (P3)</el-menu-item>
-      </el-sub-menu>
+      <el-menu-item index="/orders">
+        <el-icon><Tickets /></el-icon>
+        <span>订单管理</span>
+      </el-menu-item>
       <el-sub-menu index="farm">
         <template #title>
           <el-icon><MapLocation /></el-icon>

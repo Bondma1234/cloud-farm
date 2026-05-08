@@ -18,3 +18,4 @@ export * from './api/crops';
 export * from './api/photos';
 export * from './api/commands';
 export * from './api/plots';
+export * from './api/admin';

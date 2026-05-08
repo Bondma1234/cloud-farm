@@ -11,6 +11,7 @@ import { CropModule } from './modules/crop/crop.module';
 import { PhotoModule } from './modules/photo/photo.module';
 import { CommandModule } from './modules/command/command.module';
 import { PlotModule } from './modules/plot/plot.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PlotModule } from './modules/plot/plot.module';
     PhotoModule,
     CommandModule,
     PlotModule,
+    AdminModule,
   ],
   controllers: [HealthController],
   providers: [],

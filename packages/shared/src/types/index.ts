@@ -2,18 +2,21 @@
 // 这些类型从 apps/miniapp/src/stores/mock.js 抽出来,
 // P2 后端落 Prisma schema 时会与本文件保持一一映射
 
-export type PackageId = 'pkg-basic' | 'pkg-pro' | 'pkg-family';
+// Package id 是业务可读 string,P3 admin 能创建任意 id,所以放开为 string
+export type PackageId = string;
 
 export interface Package {
   id: PackageId;
   name: string;
   area: number; // 平方米
   price: number; // 元/年
-  tag: '热销' | '推荐' | '亲子' | '企业';
+  tag: string; // '热销' / '推荐' / '亲子' / '企业' / '新品' / '限定' 等
   cover: string;
   gallery: string[];
   highlights: string[];
   crops: string[];
+  status?: 'active' | 'archived';
+  sortOrder?: number;
 }
 
 export type PlotStatus = 'available' | 'sold' | 'maintenance' | 'reserved';

@@ -87,11 +87,15 @@ const phases = [
   { phase: 'P1', title: '架构地基: monorepo + docker + apps 骨架', status: '已完成' },
   { phase: 'P2', title: '后端 API: NestJS + Prisma + 7 张表 + 套餐接口', status: '已完成' },
   { phase: 'P2+B', title: 'Admin 接通后端,套餐数据真实显示', status: '已完成' },
-  { phase: 'P2+', title: 'API 扩展: User / Order / Plot / Camera + JWT 认证', status: '待开始' },
-  { phase: 'P3', title: 'Admin 完整: 真登录 / 套餐 CRUD / 订单管理', status: '待开始' },
-  { phase: 'P4', title: 'miniapp 接 API,替换 mock', status: '待开始' },
-  { phase: 'P5', title: '摄像头接萤石云 + 拍照抓帧', status: '待开始' },
+  { phase: 'P4-C', title: 'miniapp 套餐接 API + mock 兜底', status: '已完成' },
+  { phase: 'P2+D', title: '后端 Auth + User + Order + JWT', status: '已完成' },
+  { phase: 'P4-E', title: 'miniapp 接 Auth/User/Order 5 页', status: '已完成' },
+  { phase: 'P4-G', title: 'Journal/Crop/Photo/Command 4 模块全打通', status: '已完成' },
+  { phase: 'P4-H', title: '业务流程闭环: 选地块 / 创建订单 / Address CRUD', status: '已完成' },
+  { phase: 'P3', title: 'Admin 完整: 真登录 / 套餐 CRUD / 订单管理', status: '已完成' },
+  { phase: 'P5', title: '摄像头接萤石云 + 拍照抓帧 + my-plot', status: '待开始' },
   { phase: 'P6', title: 'C 端 Web Portal 拆分(独立 Vue 3)', status: '待开始' },
+  { phase: 'P7', title: '部署上云 + 域名 / ICP / 微信支付', status: '待开始' },
 ];
 
 onMounted(fetchStats);

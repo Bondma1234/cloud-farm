@@ -112,13 +112,25 @@ async function main() {
   }
   console.log(`  ✓ ${PLOTS.length} 地块`);
 
-  // 3. Demo 用户
+  // 3. Demo 用户(C 端)+ admin 用户(B 端)
   const user = await prisma.user.upsert({
     where: { phone: DEMO_USER.phone },
     create: DEMO_USER,
     update: DEMO_USER,
   });
-  console.log('  ✓ 1 demo 用户');
+  const adminUser = {
+    phone: '18888888888',
+    nickname: '管理员',
+    avatar: '🛡️',
+    level: 'Lv.99',
+    role: 'admin',
+  };
+  await prisma.user.upsert({
+    where: { phone: adminUser.phone },
+    create: adminUser,
+    update: adminUser,
+  });
+  console.log('  ✓ 2 用户 (1 demo customer + 1 admin)');
 
   // 4. Demo 用户的收货地址(2 条)
   const addresses = [

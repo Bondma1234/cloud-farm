@@ -299,7 +299,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - **e2e 验收全过**:journal 6/crops 8/photos 8/commands 6 全部从 SQLite 真出
   - H5 build:131 modules(P4-E 后 +8),gzip 46.6 KB JS / 9.3 KB CSS
 
-- **★ P4-H 业务流程闭环(本次)** ——
+- **P4-H 业务流程闭环** ——
   - **PlotModule** 新增:`GET /api/plots[/available][/:id]`,公开接口
   - **Address CRUD** 完整:`POST/PATCH/DELETE /api/users/me/addresses`(JWT,事务保证默认地址唯一)
   - **OrderModule 扩展**:
@@ -317,8 +317,37 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
     - POST 地址 → PATCH 改 isDefault=true → DELETE 全过
     - PATCH cancel → status=cancelled
 
+- **★ P3 Admin 完整版(本次)** ——
+  - **后端:RBAC**
+    - `common/auth/roles.decorator.ts` + `roles.guard.ts`(Reflector + 403 ForbiddenException)
+    - 角色清单:`customer / agronomist / cs / operator / admin`
+  - **后端:Package CRUD**(全部带 `@UseGuards(JwtAuthGuard, RolesGuard)`)
+    - `POST /api/packages`(admin / operator)
+    - `PATCH /api/packages/:id`(同上)
+    - `PATCH /api/packages/:id/status`(同上,上下架,不删除数据)
+    - `DELETE /api/packages/:id`(仅 admin,且未被订单引用,否则 409)
+    - `GET /api/packages?includeArchived=true`(给后台看下架数据)
+  - **后端:Admin Order**(独立 module `apps/api/src/modules/admin/`)
+    - `GET /api/admin/orders?status=&userId=&q=`(admin / operator / cs)
+    - `PATCH /api/admin/orders/:id/status`(admin / operator,cs 不可)
+    - 返回 join 上 user 表,带脱敏手机号
+    - `take: 200` 简单分页保护
+  - **seed 加 admin 用户**:`18888888888` / nickname `管理员` / role `admin`
+  - **api-client 扩展**:Package CRUD + admin/orders 全套 SDK
+  - **Admin 重构**:
+    - **真 JWT 登录** 替代原 mock 密码,失败/角色错误 toast
+    - **`stores/auth.ts`** Pinia store(管 user + 持久化 localStorage,跟 api-client token 配合)
+    - **路由守卫**:`requiresAuth` 路由没登录 → 跳 /login;已登录访问 /login → 跳 /dashboard
+    - **AdminHeader 显示**:头像 + 昵称 + role tag(admin 红 / operator 黄 / cs 绿)
+    - **Packages 页 CRUD**:`PackageEditDialog` 组件(新增/编辑共用,作物/卖点/图集 textarea + 逗号解析),上下架按钮(toggle),删除按钮(双确认)
+    - **新增 Orders 页**:Element Plus Table + 状态筛选 + 模糊搜索(id/title)+ 改状态下拉
+  - **12 项 curl 验收全过**:RBAC 403 / admin 创建 / 改 / 上下架 / 包含 archived / DELETE / admin 看所有订单 / admin 改状态 / 普通用户访问 admin 接口 403
+  - **e2e 验收全过**:登录 → Dashboard 显示 🛡️ 管理员 + 套餐 3 → /packages 3 行 + CRUD 按钮 → /orders 5 条 + 真用户手机号 + 改状态下拉
+
 至此 **miniapp 17 个页面 16 个走真后端**,只剩 1 个还在 mock:
 - `my-plot`(我的田)— 等 P5 摄像头接萤石云一起做(地块详情/摄像头/PTZ/抓拍)
+
+**Admin 后台从只读 → 真 CRUD + 订单跨用户管理 + RBAC 守护**,运营 / 客服 / 财务可以真实工作。
 
 🚧 **下一步路线**(架构 v2 §10)
 
@@ -332,10 +361,10 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P4-E miniapp 接 Auth/User/Order** | login/profile/orders/order-detail/address 5 页接真 API + mock fallback | ✅ 已完成 |
 | **P4-G 内容模块全打通** | Journal/Crop/Photo/Command 4 模块 + 4 页接真 API | ✅ 已完成 |
 | **P4-H 业务流程闭环** | Plot/Address/Order create+cancel + plot-picker/checkout/address-edit | ✅ 已完成 |
-| **P3 Admin 完整版** | 真 JWT 登录,套餐 CRUD(增删改),订单管理(B 端管所有用户) | 待开始 |
-| **P5 摄像头接萤石云** | my-plot 接真摄像头,需要先注册萤石账号 | 待 P3 |
-| **P5 摄像头接萤石云** | CameraModule + EZOPEN 播流 + 拍照抓帧 | 待 P4 |
+| **P3 Admin 完整版** | RBAC + Package CRUD + Admin Orders + 真 JWT 登录 + 路由守卫 | ✅ 已完成 |
+| **P5 摄像头接萤石云** | my-plot + CameraModule + EZOPEN 播流 + 拍照抓帧(需要先注册萤石账号) | 待开始 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
+| **P7 部署上云** | 域名 + ICP + ECS + Docker + 微信支付商户号 | 法务先行,暂搁置 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |
 
 ## 10. 换电脑续作指南
