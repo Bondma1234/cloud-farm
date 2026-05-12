@@ -422,7 +422,8 @@ async function convert(mdPath, docxPath, title) {
 }
 
 (async () => {
-  const base = 'C:/TestProject/Cloud_Farm_project/';
+  // 文档源 2026-05-12 起统一在 docs/ 下(根目录只留 README / CLAUDE / scripts)
+  const base = path.join(__dirname, 'docs') + path.sep;
   const args = process.argv.slice(2);
   const targets = [
     ['01_云上田园_项目书_v3', '云上田园 · 项目商业计划书 v3.0'],

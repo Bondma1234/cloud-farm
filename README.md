@@ -82,12 +82,15 @@ cloud-farm/
 │   ├── shared/         # TS 类型 + 业务常量 + 纯函数(四端共用)
 │   ├── api-client/     # ✅ axios + 拦截器 + 全套 SDK(auth/users/orders/.../plots)
 │   └── ui-tokens/  🚧   # 设计 token(P6 抽出来)
+├── docs/               # 项目书 / 需求 / 架构 / 设计稿 / 架构图集
+│   ├── 01_项目书_v3.{md,docx}      # 商业计划书(当前)
+│   ├── 02_需求说明书_v2.{md,docx}   # 需求清单(当前)
+│   ├── 03_软件架构图_v2.{md,docx}   # 软件架构(当前)
+│   ├── design/                    # P6 Web Portal 北极星设计稿等
+│   └── diagrams/                  # 架构图 svg/png
 ├── docker-compose.yml  # MySQL 8 + Redis 7(切生产时启)
 ├── pnpm-workspace.yaml
-├── 01_项目书_v3.{md,docx}      # 商业计划书 v3(当前)
-├── 02_需求说明书_v2.{md,docx}   # 需求清单 v2(当前)
-├── 03_软件架构图_v2.{md,docx}   # 软件架构 v2(当前)
-├── md_to_docx.js       # md → docx 一键脚本
+├── md_to_docx.js       # md → docx 一键脚本(从 docs/ 读)
 ├── CLAUDE.md           # 项目记忆 / 架构约定 / 当前进度(主备份)
 └── README.md
 ```
@@ -143,7 +146,7 @@ cloud-farm/
 | **P6** C 端 Web Portal 拆分 | apps/web/ 独立 Vue 3,大屏看监控 | 🚧 待开始(用户决定暂缓) |
 | **P7** 部署上云 | 域名 / ICP / ECS / Docker / 微信支付商户号 | 🚧 待开始(法务先行) |
 
-完整架构变更历史与 ADR 见 [`03_云上田园_软件架构图_v2.md`](./03_云上田园_软件架构图_v2.md)。
+完整架构变更历史与 ADR 见 [`docs/03_云上田园_软件架构图_v2.md`](./docs/03_云上田园_软件架构图_v2.md)。
 
 ## 数据库切换:开发 SQLite → 生产 MySQL
 

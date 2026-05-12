@@ -5,12 +5,16 @@
 
 ## 1. 项目定位
 
-**云上田园 · 河南云农场** —— 面向北上广深一线城市消费者,提供"远程认养 + 摄像头远程监控 + 农产品直送"的沉浸式云种植服务。完整定位、市场分析、商业模式、6 个月路线图见仓库根目录:
+**云上田园 · 河南云农场** —— 面向北上广深一线城市消费者,提供"远程认养 + 摄像头远程监控 + 农产品直送"的沉浸式云种植服务。完整定位、市场分析、商业模式、6 个月路线图见 [`docs/`](./docs/):
 
-- **`01_云上田园_项目书_v3.docx` / `.md`** —— 商业计划书(**当前版本**,v2 已 superseded)
-- **`02_云上田园_需求说明书_v2.md` / `.docx`** —— 需求清单(**当前版本**,v1 已 superseded)
-- **`03_云上田园_软件架构图_v2.md` / `.docx`** —— 软件架构(**当前版本**,v1 已 superseded)
-- `md_to_docx.js`(根目录)+ `package.json` —— 把 md 文档转成 docx 的脚本(`node md_to_docx.js` 即可重新生成 3 份当前版 docx)
+- **[`docs/01_云上田园_项目书_v3.md`](./docs/01_云上田园_项目书_v3.md)**(+ docx) —— 商业计划书(**当前版本**,v2 已 superseded)
+- **[`docs/02_云上田园_需求说明书_v2.md`](./docs/02_云上田园_需求说明书_v2.md)**(+ docx) —— 需求清单(**当前版本**,v1 已 superseded)
+- **[`docs/03_云上田园_软件架构图_v2.md`](./docs/03_云上田园_软件架构图_v2.md)**(+ docx) —— 软件架构(**当前版本**,v1 已 superseded)
+- `md_to_docx.js`(根目录)+ `package.json` —— 把 `docs/` 下的 md 转成 docx(`pnpm docs:gen` 或 `node md_to_docx.js`)
+- [`docs/design/`](./docs/design) —— UI 设计稿(P6 Web Portal 北极星图等)
+- [`docs/diagrams/`](./docs/diagrams) —— 架构图集(SVG + PNG)
+
+> 2026-05-12 起根目录整理:所有正式文档、架构图、设计稿统一放在 `docs/`,根目录只留 `README.md` / `CLAUDE.md` / 顶层构建脚本。详见 [`docs/README.md`](./docs/README.md)。
 
 ⚠️ **关键澄清**:摄像头是**用户私有监控**,**不是直播** —— 1 个摄像头对应 1 个用户(他自己看自己的地块),没有"1 推流 N 观众"那种并发。这一点 v1 架构文档曾经写错,v2 已纠正。
 
@@ -41,9 +45,12 @@ Cloud_Farm_project/
 ├── pnpm-workspace.yaml ★ P1
 ├── package.json              # 根 monorepo 配置 + 顶层 dev/build 脚本
 ├── prototype/                # 早期纯 HTML/CSS 原型(可参考视觉)
-├── diagrams/                 # 架构图 svg/png
-├── 01..03_*.docx / .md       # 项目书 / 需求 / 架构(项目书 v3、需求 v2、架构 v2 是当前)
-├── md_to_docx.js             # md → docx 转换(node md_to_docx.js)
+├── docs/                     # 项目书 / 需求 / 架构 / 设计稿 / 架构图集
+│   ├── 01..03_*.docx / .md   # 三份正式文档(v3/v2/v2 是当前,v1 历史 superseded)
+│   ├── design/               # P6 Web Portal 北极星稿等
+│   ├── diagrams/             # 架构图 svg/png
+│   └── project_original.txt  # 最早期 126 行文字稿
+├── md_to_docx.js             # md → docx 转换(node md_to_docx.js,源在 docs/)
 └── CLAUDE.md / README.md
 ```
 
@@ -485,7 +492,29 @@ pnpm dev:miniapp      # http://localhost:5180
 
 ---
 
-## 11. 关于 Claude Code 自身
+## 11. P6 Web Portal 设计参考(等到真做的时候用)
+
+C 端 Web Portal(`apps/web/`)目前**没建**。用户决定暂缓,排在 P5 真萤石云之后。等真做时,**视觉北极星**是这张稿子:
+
+- 位置:[`docs/design/web-portal-mockup.png`](./docs/design/web-portal-mockup.png)(用户后续放进去)
+- 风格:水彩插画 + 自然绿主色,**跟现在 miniapp/admin 的 Element Plus + 实拍照片风格差异大**
+- 核心元素:hero 大场景 / 4 套餐卡(基础/进阶/亲子/**企业**)/ 田块网格地图 / 我的田 / 直播 / 商城 / 个人中心 7 个 tab
+
+**P6 启动前需要确认 3 件事**:
+
+1. **企业版套餐**:稿子里有 `¥1999/季 · 50㎡起 · 企业版`,但后端 seed **没这条**。架构 v2 §3.1 提过企业版,P6 启动前补 seed
+2. **直播 tab 命名**:架构 v2 说我们没直播只有私有摄像头,但 C 端 tab 叫"直播"用户认知友好。建议:**C 端称"直播",内部架构称"私有监控"**,两套术语并存
+3. **视觉资源来源**:水彩插画需要素材,有 3 条路 ——
+   - 设计师外包(¥3000-8000)
+   - Midjourney AI 生成 + 调色(¥200 + 1-2 天)
+   - 图库购买(¥500-2000)
+   - **推荐 AI + 后期**
+
+P6 工作量按这个稿子完整还原:**~8-10 天**(纯前端,后端不动)。详见 [`docs/design/README.md`](./docs/design/README.md)。
+
+---
+
+## 12. 关于 Claude Code 自身
 
 - **项目级配置**: `.claude/settings.local.json` 是这台机器的 Bash 白名单,**不入 git**(.gitignore 里已加),换电脑后第一次打开会被问几次"允许吗",允许过就持久化了
 - **会话历史**: `~/.claude/projects/C--TestProject-Cloud-Farm-project/*.jsonl`,本地存,**不会跟着 git 走**。所以这份 `CLAUDE.md` 才是项目记忆的"主备份"
