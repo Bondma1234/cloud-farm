@@ -183,7 +183,10 @@ async function main() {
       statusLabel: '种植中',
       date: new Date('2026-03-01'),
       packageId: 'pkg-pro',
+      plotId: 'P-A-07',
       addressId: 'addr-demo-1',
+      crops: JSON.stringify(['小番茄']),
+      stake: '小祎的菜园',
       metadata: JSON.stringify({
         subItems: [
           { label: '地块', value: 'A 区 · 07 号' },
@@ -241,6 +244,7 @@ async function main() {
       date: new Date('2026-04-20'),
       packageId: 'pkg-basic',
       addressId: 'addr-demo-1',
+      crops: JSON.stringify(['红薯', '胡萝卜']),
       metadata: JSON.stringify({ expireIn: '29:48' }),
     },
   ];
@@ -254,6 +258,43 @@ async function main() {
     });
   }
   console.log(`  ✓ ${orders.length} 订单`);
+
+  // 5.1 已被认养(status=growing/paid)的地块强制 sold
+  const adoptionPlotIds = orders
+    .filter((o) => o.type === '认养' && (o as { plotId?: string }).plotId && ['growing', 'paid'].includes(o.status))
+    .map((o) => (o as { plotId: string }).plotId);
+  if (adoptionPlotIds.length) {
+    await prisma.plot.updateMany({
+      where: { id: { in: adoptionPlotIds } },
+      data: { status: 'sold' },
+    });
+    console.log(`  ✓ ${adoptionPlotIds.length} 地块锁定 sold`);
+  }
+
+  // 5.2 P5-mock: 摄像头 - 给所有地块各绑一个 mock 摄像头
+  // 真萤石云接入时, 只需把 deviceSerial 改成真序列号 + vendor='ezviz',
+  // CameraService 那边切到调萤石 OpenAPI 即可,前端代码 0 改动
+  for (const plot of PLOTS) {
+    const cameraId = `cam-${plot.id.toLowerCase()}`;
+    await prisma.camera.upsert({
+      where: { id: cameraId },
+      create: {
+        id: cameraId,
+        deviceSerial: `MOCK-${plot.id}`,
+        vendor: 'mock',
+        channelNo: 1,
+        ptzSupported: plot.id !== 'P-A-03', // 演示用:其中一块共享摄像头(基础版)不支持 PTZ
+        status: 'online',
+        lastOnlineAt: new Date(),
+      },
+      update: { status: 'online', lastOnlineAt: new Date() },
+    });
+    await prisma.plot.update({
+      where: { id: plot.id },
+      data: { cameraId },
+    });
+  }
+  console.log(`  ✓ ${PLOTS.length} 摄像头绑到地块(mock vendor,P5 切萤石)`);
 
   // 6. 田园动态 (从 miniapp/src/stores/mock.js 的 JOURNAL_ENTRIES 迁过来)
   const journalEntries = [

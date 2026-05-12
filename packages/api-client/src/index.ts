@@ -19,3 +19,4 @@ export * from './api/photos';
 export * from './api/commands';
 export * from './api/plots';
 export * from './api/admin';
+export * from './api/cameras';

@@ -317,7 +317,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
     - POST 地址 → PATCH 改 isDefault=true → DELETE 全过
     - PATCH cancel → status=cancelled
 
-- **★ P3 Admin 完整版(本次)** ——
+- **P3 Admin 完整版** ——
   - **后端:RBAC**
     - `common/auth/roles.decorator.ts` + `roles.guard.ts`(Reflector + 403 ForbiddenException)
     - 角色清单:`customer / agronomist / cs / operator / admin`
@@ -345,7 +345,41 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
   - **e2e 验收全过**:登录 → Dashboard 显示 🛡️ 管理员 + 套餐 3 → /packages 3 行 + CRUD 按钮 → /orders 5 条 + 真用户手机号 + 改状态下拉
 
 至此 **miniapp 17 个页面 16 个走真后端**,只剩 1 个还在 mock:
-- `my-plot`(我的田)— 等 P5 摄像头接萤石云一起做(地块详情/摄像头/PTZ/抓拍)
+- `my-plot`(我的田)— ✅ **P5-mock 已通**,等 P5 真萤石账号下来切真硬件
+
+**Admin 后台从只读 → 真 CRUD + 订单跨用户管理 + RBAC 守护**,运营 / 客服 / 财务可以真实工作。
+
+- **★ P5-mock 摄像头模块(本次)** ——
+  - **schema 扩展**:Order 加 `plotId` / `crops` / `stake` 字段(migration `order_add_plot_crops_stake`)
+    OrderService.create 同时存 plotId(之前只锁地块,没记录归属),为"我的田"查找用户认养地块铺路
+  - **seed 扩展**:
+    - 12 个 mock Camera,每个 Plot 各绑一个(`cam-p-a-01` ... `cam-p-a-12`)
+    - 设 vendor='mock',真萤石上线只改这一字段
+    - 演示用 P-A-03 标 `ptzSupported=false`(模拟"共享摄像头"基础版)
+    - 已认养的地块(订单 status=growing)自动锁 sold
+  - **CameraModule** 新增(`apps/api/src/modules/camera/`):
+    - `GET /api/cameras/:plotId/url` → 返 mock 播放地址 + TTL(P5 真切萤石 EZOPEN)
+    - `POST /api/cameras/:plotId/ptz` → 校验 ptzSupported,真接口 mock 返 ok(P5 调萤石 PTZ API)
+    - `POST /api/cameras/:plotId/snapshot` → 返 mock 图 + **自动写一条 JournalEntry**(用户立刻在动态页看到抓拍)
+    - 全部 JWT + **`assertOwn` 鉴权**:用户必须是该 plot 的认养人(查 order 表),否则 403,防别人偷看
+  - **UserModule** 加 `GET /api/users/me/plot` 聚合接口:
+    - 找当前用户 type=认养 + status=growing/paid/shipped 最新订单
+    - 合成 plot + 摄像头 + 套餐 + 作物 + 进度(daysElapsed/daysTotal/stage)一次返
+  - **api-client 扩展**:`cameras.ts` (getCameraUrl/cameraPtz/cameraSnapshot) + `users.getMyPlot` + `MyPlot` 类型
+  - **miniapp**:
+    - 新 `stores/myPlot.js`:fetch / refreshCameraUrl / ptz / snapshot,无 mock fallback(没认养就空态)
+    - 重构 `pages/my-plot/index.vue`:
+      - 加空态(未认养)/ 加载态 / 错误态 / 数据态四态
+      - 状态卡:从 store.plot.{name/cropEmoji/crop/stage/progress/nextAction/weather} 拉真值
+      - 摄像头:背景 url 从 store.cameraUrl 来 / PTZ 按钮按 ptzSupported 显隐 / **底部按钮改"抓拍"** 调真接口
+      - "拍张照"指令拦截到 onSnapshot(走 camera.snapshot 而不是 mock toast)
+      - 抓拍成功后摄像头画面立即换成新图 + 提示"已加入生长日记"
+  - **e2e 验收全过**:
+    - 后端 6 项 curl:/users/me/plot / camera url / 越权 403 / ptz / snapshot / journal 新增 ✅
+    - miniapp DOM:**小祎的菜园 / P-A-07 / 🍅 小番茄 · 坐果期 / 75% / 摄像头在线 / 3 个 PTZ 按钮** ✅
+    - PTZ left + snapshot → journal 7 → 8 条(自动写入)✅
+
+**至此 miniapp 17 个页面 100% 走真后端,完全无 mock!**(P5 真硬件接入时只需把 CameraService 里 mock 地址换成萤石 OpenAPI 调用,前端 0 改动)
 
 **Admin 后台从只读 → 真 CRUD + 订单跨用户管理 + RBAC 守护**,运营 / 客服 / 财务可以真实工作。
 
@@ -362,7 +396,8 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P4-G 内容模块全打通** | Journal/Crop/Photo/Command 4 模块 + 4 页接真 API | ✅ 已完成 |
 | **P4-H 业务流程闭环** | Plot/Address/Order create+cancel + plot-picker/checkout/address-edit | ✅ 已完成 |
 | **P3 Admin 完整版** | RBAC + Package CRUD + Admin Orders + 真 JWT 登录 + 路由守卫 | ✅ 已完成 |
-| **P5 摄像头接萤石云** | my-plot + CameraModule + EZOPEN 播流 + 拍照抓帧(需要先注册萤石账号) | 待开始 |
+| **P5-mock 摄像头模块** | CameraModule + /users/me/plot + my-plot 走真接口(mock 地址) | ✅ 已完成 |
+| **P5 真萤石云接入** | CameraService 里把 mock 地址换成 EZOPEN OpenAPI 调用 | 待萤石账号 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | **P7 部署上云** | 域名 + ICP + ECS + Docker + 微信支付商户号 | 法务先行,暂搁置 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |

@@ -117,8 +117,13 @@ model Order {
   date        DateTime
   packageId   String?
   package     Package? @relation(fields: [packageId], references: [id])
+  plotId      String?  // P5-mock: 认养订单关联的地块,方便"我的田"查
   addressId   String?
   metadata    String?  // JSON 字符串
+  // 选作物用 JSON 数组存,跨方言安全(同 Package.crops 套路)
+  crops       String?
+  // 立牌名(亲子版 / 用户起的名字)
+  stake       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

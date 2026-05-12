@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { UserService } from './user.service';
 import { UserPublicDto, AddressDto } from './dto/user.dto';
 import { AddressInputDto } from './dto/address-input.dto';
+import { MyPlotDto } from './dto/my-plot.dto';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { JwtPayload } from '../../common/auth/jwt-payload';
@@ -27,6 +28,14 @@ export class UserController {
   @ApiResponse({ status: 200, type: [AddressDto] })
   myAddresses(@CurrentUser() user: JwtPayload): Promise<AddressDto[]> {
     return this.userService.listAddresses(user.sub);
+  }
+
+  @Get('me/plot')
+  @ApiOperation({ summary: '当前用户主要的种植中地块(my-plot 页用)' })
+  @ApiResponse({ status: 200, type: MyPlotDto })
+  @ApiResponse({ status: 404, description: '尚未认养任何地块' })
+  myPlot(@CurrentUser() user: JwtPayload): Promise<MyPlotDto> {
+    return this.userService.getMyPlot(user.sub);
   }
 
   @Post('me/addresses')

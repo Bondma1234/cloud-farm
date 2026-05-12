@@ -12,6 +12,7 @@ import { PhotoModule } from './modules/photo/photo.module';
 import { CommandModule } from './modules/command/command.module';
 import { PlotModule } from './modules/plot/plot.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CameraModule } from './modules/camera/camera.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AdminModule } from './modules/admin/admin.module';
     CommandModule,
     PlotModule,
     AdminModule,
+    CameraModule,
   ],
   controllers: [HealthController],
   providers: [],

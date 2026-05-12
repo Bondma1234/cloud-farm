@@ -92,7 +92,10 @@ export class OrderService {
           statusLabel: '待付款',
           date: today,
           packageId: pkg.id,
+          plotId: plot.id, // P5-mock: 关联地块, my-plot 页能查到
           addressId: addr.id,
+          crops: JSON.stringify(dto.crops),
+          stake: dto.stake ?? null,
           metadata: JSON.stringify({ subItems, expireIn }),
         },
       });
