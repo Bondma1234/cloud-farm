@@ -177,6 +177,7 @@ const goPlot = () => Taro.switchTab({ url: '/pages/my-plot/index' });
 .cmd-st.completed { background: var(--color-primary-light); color: var(--color-primary-dark); }
 .cmd-st.executing { background: rgba(242, 201, 76, 0.25); color: #8D6E00; }
 .cmd-st.rejected { background: rgba(229, 115, 115, 0.15); color: var(--color-danger); }
+.cmd-st.pending { background: rgba(96, 125, 139, 0.15); color: #455a64; }
 
 .cmd-meta {
   display: flex; gap: 12px; align-items: baseline;

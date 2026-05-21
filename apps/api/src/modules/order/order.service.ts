@@ -104,6 +104,29 @@ export class OrderService {
     });
   }
 
+  /**
+   * 支付订单(MVP mock):pending → 认养类 paid → 立即变 growing,产地直送 paid → shipped
+   * P5+ 真接入微信支付时:这一步会被 webhook 回调触发,前端只发起 prepay
+   */
+  async pay(userId: number, id: string): Promise<OrderDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({ where: { id, userId } });
+      if (!order) throw new NotFoundException(`订单 ${id} 不存在`);
+      if (order.status !== 'pending') {
+        throw new BadRequestException(`订单当前状态 (${order.statusLabel}) 不能支付`);
+      }
+      // 认养类订单付完款直接进 growing(种植中);产地直送进 shipped(待发货)
+      const isAdopt = order.type === '认养';
+      const nextStatus = isAdopt ? 'growing' : 'shipped';
+      const nextLabel = isAdopt ? '种植中' : '待发货';
+      const updated = await tx.order.update({
+        where: { id },
+        data: { status: nextStatus, statusLabel: nextLabel },
+      });
+      return this.toDto(updated);
+    });
+  }
+
   /** 取消订单(限制:必须属于当前用户 + 状态可取消) */
   async cancel(userId: number, id: string): Promise<OrderDto> {
     return this.prisma.$transaction(async (tx) => {

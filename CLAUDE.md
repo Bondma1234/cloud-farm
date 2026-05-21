@@ -390,6 +390,37 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 
 **Admin 后台从只读 → 真 CRUD + 订单跨用户管理 + RBAC 守护**,运营 / 客服 / 财务可以真实工作。
 
+- **★ P8 W1 三件套(2026-05-21)** ——
+  - **P8-1 指令工单完整闭环**:
+    - 后端 `CommandModule` 加 `POST /api/commands`(用户发指令,assertOwn plot 鉴权,生成 `c-YYYYMMDD-NN` ID + icon/label 自动映射)
+    - 新建 `AdminCommandController`(`/api/admin/commands/*`),RBAC=`admin|operator|agronomist`:
+      - `GET ?status=&plotId=&type=` 列表
+      - `PATCH /:id/accept` 接单(pending → executing,记 by=农技员昵称)
+      - `PATCH /:id/complete { photo, note }` 完成(executing → completed),**事务内自动写一条 JournalEntry**,用户秒看到"农技员小李给你浇水了"
+    - api-client 扩 `createCommand` / `listAdminCommands` / `acceptCommand` / `completeCommand`
+    - miniapp `my-plot` 4 个指令按钮(浇水/施肥/除草/拍照)接真 `createCommand`,提交后刷新 commands store;"拍照"特殊处理走 camera.snapshot
+    - Admin 新增 `/commands` Element Plus Table 工单管理页 + 完成对话框(el-upload 直接传图)
+    - seed 加 **agronomist 账号 `19999999999`**(role=agronomist)用来接单
+  - **P8-2 支付 mock flow**:
+    - `POST /api/orders/:id/pay`(JWT + own + 状态守卫:仅 pending 可调)→ 认养类直接 paid → growing,产地直送 paid → shipped
+    - api-client 加 `payOrder`,miniapp orders / order-detail 两页"去支付"按钮接真
+    - 重复支付返 400 守卫住,P5+ 真接微信支付时换 prepay + jsapi 即可,前端 0 改
+  - **P8-3 文件上传模块**:
+    - `UploadModule`:`POST /api/upload`(JWT,multipart,字段 `file`,5MB 限制,只允许图片 MIME)
+    - 本地磁盘存 `apps/api/uploads/YYYY-MM-DD/<rand>.ext`,`useStaticAssets('/uploads/')` 暴露静态访问
+    - **注意路径不冲突**:接口 `/api/upload` (单数) / 静态 `/uploads/*` (复数)
+    - Admin 工单完成对话框集成 el-upload(`:http-request` 自定义走 fetch + Bearer token)
+    - vite proxy `/uploads → :3000` 让 admin / miniapp dev 服务器也能直链上传后的图
+    - `.gitignore` 加 `apps/api/uploads/`(P7 切 OSS 后这行可删)
+  - **W1 性能优化(顺手做掉的)**:
+    - Admin 抽 `layouts/DefaultLayout.vue`,AdminAside / AdminHeader 全局挂一次,路由切 tab 不再整树重建
+    - `vite.config.ts` 加 `optimizeDeps.include: ['element-plus', ...]` + `ElementPlusResolver({ importStyle: false })` + `main.ts` 一次性引整包 css —— **dev 模式 Element Plus chunk 从 74 → 0,每页 import 从 60+ → 26**
+    - api-client 401 拦截器 dispatch `cloud-farm:unauthorized` 全局事件 → admin main.ts 桥接 → 自动跳 `/login?reason=expired`,避免在受限页持续 401 堆错
+    - auth store 加 `_hasToken` reactive 标志,isLoggedIn 不再每次跑 localStorage 读
+  - **e2e 验收**(Python 脚本 9 个场景全过):
+    - 拉用户认养地块 → 发施肥指令 → 越权 P-A-99 返 403 → 农技员看到 pending → accept → complete with photo → journal 自动多一条 → 支付 pending 订单 → growing → 重复支付 400 → 文件上传 + HTTP 200 拉回
+  - **构建确认**:admin prod build 主 chunk 1064KB → 153KB(gzip 353 → 60KB,降 83%),miniapp H5 build 136 modules 不变
+
 🚧 **下一步路线**(架构 v2 §10)
 
 | 阶段 | 内容 | 当前状态 |
@@ -404,6 +435,8 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P4-H 业务流程闭环** | Plot/Address/Order create+cancel + plot-picker/checkout/address-edit | ✅ 已完成 |
 | **P3 Admin 完整版** | RBAC + Package CRUD + Admin Orders + 真 JWT 登录 + 路由守卫 | ✅ 已完成 |
 | **P5-mock 摄像头模块** | CameraModule + /users/me/plot + my-plot 走真接口(mock 地址) | ✅ 已完成 |
+| **★ P8 W1 指令/支付/上传** | Command 完整闭环 + 订单 mock 支付 + UploadModule + Admin /commands 页 + 性能优化(layout 抽离 + EP optimizeDeps) | ✅ 已完成 |
+| **P8 W2 工程质量** | Admin 用户管理 + 简单看板 ECharts / 测试覆盖 / CI / 错误收集 | 🚧 待开始 |
 | **P5 真萤石云接入** | CameraService 里把 mock 地址换成 EZOPEN OpenAPI 调用 | 待萤石账号 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | **P7 部署上云** | 域名 + ICP + ECS + Docker + 微信支付商户号 | 法务先行,暂搁置 |

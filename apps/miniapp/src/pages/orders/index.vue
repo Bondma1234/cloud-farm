@@ -165,12 +165,17 @@ const cancelOrder = (o) => {
   });
 };
 
-const payOrder = (o) => {
-  Taro.showLoading({ title: '调起支付...' });
-  setTimeout(() => {
+const payOrder = async (o) => {
+  Taro.showLoading({ title: '调起支付…' });
+  try {
+    const updated = await orderStore.pay(o.id);
+    await orderStore.fetch({ force: true });
     Taro.hideLoading();
-    Taro.showToast({ title: '支付成功（mock）', icon: 'success' });
-  }, 800);
+    Taro.showToast({ title: `支付成功 · ${updated.statusLabel}`, icon: 'success' });
+  } catch (e) {
+    Taro.hideLoading();
+    Taro.showModal({ title: '支付失败', content: e?.message || '请稍后重试', showCancel: false });
+  }
 };
 
 const contactCourier = (o) => {

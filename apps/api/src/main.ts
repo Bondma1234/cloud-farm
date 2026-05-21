@@ -1,13 +1,21 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { UPLOAD_ROOT } from './modules/upload/upload.module';
+import * as fs from 'fs';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api');
+
+  // 静态资源:暴露 /uploads/* (本地磁盘存的图片,P7 上 OSS 时这段删掉)
+  // 上传接口在 /api/upload (单数),静态文件在 /uploads/<日期>/<文件>,不冲突
+  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+  app.useStaticAssets(UPLOAD_ROOT, { prefix: '/uploads/' });
 
   // 跨域: dev 阶段允许所有来源(prod 时收紧)
   app.enableCors({

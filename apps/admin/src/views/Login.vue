@@ -21,7 +21,7 @@
 
       <div class="hint">
         <el-text type="info" size="small">
-          📞 后台账号:<strong>18888888888</strong>(role=admin)<br />
+          📞 后台账号:<strong>18888888888</strong>(admin)/ <strong>19999999999</strong>(农技员)<br />
           🔢 验证码:任意 6 位数字(MVP mock,如 <strong>123456</strong>)<br />
           ⚠️ C 端用户(role=customer)登录会被后台拒绝
         </el-text>
@@ -55,7 +55,7 @@ async function onSubmit() {
   try {
     const data = await apiLogin({ phone: form.phone, code: form.code });
     // 后台要求至少 admin / operator / cs 之一
-    const allowed = ['admin', 'operator', 'cs'];
+    const allowed = ['admin', 'operator', 'cs', 'agronomist'];
     if (!allowed.includes(data.user.role)) {
       auth.clear();
       ElMessage.error(`当前账号角色 ${data.user.role} 不能登录后台`);

@@ -1,12 +1,6 @@
 <template>
-  <el-container class="page">
-    <admin-aside />
-
-    <el-container>
-      <admin-header title="套餐管理" />
-
-      <el-main>
-        <el-card>
+  <div class="page">
+    <el-card>
           <template #header>
             <div class="head">
               <strong>认养套餐</strong>
@@ -105,15 +99,13 @@
           title="P3 阶段"
           description="套餐 CRUD 接通真后端: POST/PATCH/DELETE/PATCH:status 全部受 RBAC 守护(admin/operator 可写,admin 才能物理删除,且未被订单引用)。"
         />
-      </el-main>
 
-      <package-edit-dialog
-        v-model="dialogOpen"
-        :package="editing"
-        @saved="onSaved"
-      />
-    </el-container>
-  </el-container>
+    <package-edit-dialog
+      v-model="dialogOpen"
+      :package="editing"
+      @saved="onSaved"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -127,8 +119,6 @@ import {
   ApiError,
 } from '@cloud-farm/api-client';
 import type { Package } from '@cloud-farm/shared';
-import AdminAside from '@/components/AdminAside.vue';
-import AdminHeader from '@/components/AdminHeader.vue';
 import PackageEditDialog from '@/components/PackageEditDialog.vue';
 
 const list = ref<Package[]>([]);
@@ -214,7 +204,7 @@ onMounted(load);
 
 <style scoped>
 .page {
-  height: 100vh;
+  /* layout 管高度 */
 }
 .head {
   display: flex;

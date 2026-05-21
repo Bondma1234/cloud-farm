@@ -117,24 +117,44 @@ import Taro from '@tarojs/taro';
 import { computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useMyPlotStore } from '../../stores/myPlot';
+import { useCommandStore } from '../../stores/commands';
 import { useAppStore, COMMANDS } from '../../stores/mock';
+import { createCommand, ApiError } from '@cloud-farm/api-client';
 
 const store = useMyPlotStore();
+const cmdStore = useCommandStore();
 const appStore = useAppStore();
 const { plot } = storeToRefs(store);
 const commands = COMMANDS;
 
 const sendCmd = async (c) => {
-  // "拍张照" 走真摄像头抓拍接口
+  // "拍张照" 走真摄像头抓拍接口(立即出图,不进工单系统)
   if (c.key === 'shoot') {
     return onSnapshot();
   }
+  if (!plot.value?.plotId) {
+    Taro.showToast({ title: '没有种植中的地块', icon: 'none' });
+    return;
+  }
   Taro.showModal({
     title: `确认${c.label}`,
-    content: c.price > 0 ? `需支付 ¥${c.price}，${c.cooldown}` : `${c.cooldown}`,
-    success: ({ confirm }) => {
-      if (confirm) {
-        Taro.showToast({ title: `${c.label}指令已发送(mock)`, icon: 'success' });
+    content: c.price > 0 ? `需支付 ¥${c.price},${c.cooldown}` : `${c.cooldown}`,
+    success: async ({ confirm }) => {
+      if (!confirm) return;
+      try {
+        Taro.showLoading({ title: '提交中…' });
+        await createCommand({
+          type: c.key,
+          plotId: plot.value.plotId,
+        });
+        Taro.hideLoading();
+        Taro.showToast({ title: `${c.label}指令已下单`, icon: 'success' });
+        // 刷新指令历史 store,用户进 /commands 能立即看到
+        cmdStore.fetch({ force: true }).catch(() => {});
+      } catch (e) {
+        Taro.hideLoading();
+        const msg = e instanceof ApiError ? `${e.message}` : (e?.message || '下单失败');
+        Taro.showToast({ title: msg, icon: 'none' });
       }
     }
   });

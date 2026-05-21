@@ -33,21 +33,36 @@ function writePersisted(u: AdminUser | null) {
 export const useAuthStore = defineStore('admin-auth', {
   state: () => ({
     user: readPersisted(),
+    // 同步一次内存里的"是否有 token",避免每次 isLoggedIn 都跑 getAccessToken()→localStorage
+    // 401 拦截器清 token 后会通过 invalidate() 把这个标志位拨回来
+    _hasToken: !!getAccessToken(),
   }),
   getters: {
-    isLoggedIn: (s) => !!s.user && !!getAccessToken(),
+    isLoggedIn: (s) => !!s.user && s._hasToken,
     role: (s) => s.user?.role || '',
     isAdmin: (s) => s.user?.role === 'admin',
   },
   actions: {
     set(user: AdminUser) {
       this.user = user;
+      this._hasToken = !!getAccessToken();
       writePersisted(user);
+    },
+    /** 401 拦截器调它,把 store 内的登录态拨成"已失效",路由守卫下一帧就跳 /login */
+    invalidate() {
+      this.user = null;
+      this._hasToken = false;
+      writePersisted(null);
     },
     clear() {
       this.user = null;
+      this._hasToken = false;
       writePersisted(null);
       apiLogout();
     },
   },
 });
+
+// 模块级:监听 storage 事件(其他 tab 退出登录时同步)+ 简单轮询 token 变化
+// 但更靠谱的是显式调:在 main.ts 装一个 unauthorized 事件桥
+

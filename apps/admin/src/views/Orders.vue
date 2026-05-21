@@ -1,12 +1,6 @@
 <template>
-  <el-container class="page">
-    <admin-aside />
-
-    <el-container>
-      <admin-header title="订单管理" />
-
-      <el-main>
-        <el-card>
+  <div class="page">
+    <el-card>
           <template #header>
             <div class="head">
               <strong>所有订单</strong>
@@ -101,9 +95,7 @@
           title="P3 阶段"
           description="GET /api/admin/orders 是 admin 专属接口(role admin/operator/cs 可看), PATCH /admin/orders/:id/status 改状态(admin/operator 可改, cs 只读)。"
         />
-      </el-main>
-    </el-container>
-  </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -116,9 +108,6 @@ import {
   type AdminOrderListItem,
   ApiError,
 } from '@cloud-farm/api-client';
-import AdminAside from '@/components/AdminAside.vue';
-import AdminHeader from '@/components/AdminHeader.vue';
-
 const STATUSES = [
   { value: 'pending', label: '待付款' },
   { value: 'paid', label: '已付款' },
@@ -175,7 +164,7 @@ onMounted(load);
 
 <style scoped>
 .page {
-  height: 100vh;
+  /* layout 管高度 */
 }
 .head {
   display: flex;

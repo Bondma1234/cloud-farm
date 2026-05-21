@@ -130,7 +130,20 @@ async function main() {
     create: adminUser,
     update: adminUser,
   });
-  console.log('  ✓ 2 用户 (1 demo customer + 1 admin)');
+  // 农技员账号 — 用来接 / 完成 指令工单
+  const agronomistUser = {
+    phone: '19999999999',
+    nickname: '农技员小李',
+    avatar: '🧑‍🌾',
+    level: 'Lv.10',
+    role: 'agronomist',
+  };
+  await prisma.user.upsert({
+    where: { phone: agronomistUser.phone },
+    create: agronomistUser,
+    update: agronomistUser,
+  });
+  console.log('  ✓ 3 用户 (1 demo customer + 1 admin + 1 agronomist)');
 
   // 4. Demo 用户的收货地址(2 条)
   const addresses = [

@@ -43,6 +43,7 @@ const roleType = computed<'primary' | 'success' | 'warning' | 'danger' | 'info'>
   if (auth.user?.role === 'admin') return 'danger';
   if (auth.user?.role === 'operator') return 'warning';
   if (auth.user?.role === 'cs') return 'success';
+  if (auth.user?.role === 'agronomist') return 'primary';
   return 'info';
 });
 

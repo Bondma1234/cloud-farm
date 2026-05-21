@@ -26,6 +26,13 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# 本地上传的图片(P7 切 OSS 后可删这行)
+apps/api/uploads/
+
+# Prisma 本地 SQLite 数据库
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
+
 # Claude workspace local state
 .claude/local/
 # settings.local.json 里都是当前这台 Windows 的绝对路径白名单，换机器没用

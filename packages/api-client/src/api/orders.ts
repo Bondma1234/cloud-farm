@@ -31,3 +31,11 @@ export function createOrder(input: CreateOrderInput): Promise<Order> {
 export function cancelOrder(id: string): Promise<Order> {
   return patch<Order>(`/orders/${id}/cancel`);
 }
+
+/**
+ * 支付订单(MVP mock,认养类直接 → growing,产地直送 → shipped)
+ * P5+ 真接入微信支付:前端只调 prepay 拿 jsapi 参数,真实支付走 wx.requestPayment
+ */
+export function payOrder(id: string): Promise<Order> {
+  return post<Order>(`/orders/${id}/pay`, {});
+}

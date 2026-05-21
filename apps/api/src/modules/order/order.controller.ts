@@ -47,4 +47,12 @@ export class OrderController {
   cancel(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<OrderDto> {
     return this.orderService.cancel(user.sub, id);
   }
+
+  @Post(':id/pay')
+  @ApiOperation({ summary: '支付订单(MVP mock,认养类 paid → growing;产地直送 paid → shipped)' })
+  @ApiResponse({ status: 200, type: OrderDto })
+  @ApiResponse({ status: 400, description: '订单状态不允许支付' })
+  pay(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<OrderDto> {
+    return this.orderService.pay(user.sub, id);
+  }
 }

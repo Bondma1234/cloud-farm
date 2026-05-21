@@ -155,6 +155,7 @@ import Taro, { useRouter } from '@tarojs/taro';
 import { computed, onMounted, ref } from 'vue';
 import { useAppStore } from '../../stores/mock';
 import { useOrderStore } from '../../stores/orders';
+import { cancelOrder as apiCancelOrder, ApiError } from '@cloud-farm/api-client';
 
 const router = useRouter();
 const store = useAppStore();
@@ -162,6 +163,7 @@ const orderStore = useOrderStore();
 const orderId = computed(() => router.params?.id || '');
 
 const order = ref(null);
+const paying = ref(false);
 
 const address = computed(() => {
   if (!order.value?.addressId) return null;
@@ -195,13 +197,43 @@ const copyId = () => {
 
 const cancelOrder = () => Taro.showModal({
   title: '取消订单',
-  content: '确定要取消该订单吗？',
-  success: (res) => { if (res.confirm) Taro.showToast({ title: '订单已取消', icon: 'success' }); }
+  content: '确定要取消该订单吗?',
+  success: async (res) => {
+    if (!res.confirm || !order.value) return;
+    try {
+      Taro.showLoading({ title: '提交中…' });
+      const updated = await apiCancelOrder(order.value.id);
+      order.value = updated;
+      // 同步 list
+      const idx = orderStore.list.findIndex(o => o.id === updated.id);
+      if (idx >= 0) orderStore.list[idx] = updated;
+      Taro.hideLoading();
+      Taro.showToast({ title: '订单已取消', icon: 'success' });
+    } catch (e) {
+      Taro.hideLoading();
+      const msg = e instanceof ApiError ? e.message : (e?.message || '取消失败');
+      Taro.showToast({ title: msg, icon: 'none' });
+    }
+  }
 });
 
-const payOrder = () => {
-  Taro.showLoading({ title: '调起支付...' });
-  setTimeout(() => { Taro.hideLoading(); Taro.showToast({ title: '支付成功（mock）', icon: 'success' }); }, 800);
+const payOrder = async () => {
+  if (!order.value || paying.value) return;
+  paying.value = true;
+  Taro.showLoading({ title: '调起支付…' });
+  try {
+    // MVP mock 直接调后端 pay,真接微信支付时这里换 wx.requestPayment
+    const updated = await orderStore.pay(order.value.id);
+    order.value = updated;
+    Taro.hideLoading();
+    Taro.showToast({ title: `支付成功 · ${updated.statusLabel}`, icon: 'success' });
+  } catch (e) {
+    Taro.hideLoading();
+    const msg = e instanceof ApiError ? e.message : (e?.message || '支付失败');
+    Taro.showToast({ title: msg, icon: 'none' });
+  } finally {
+    paying.value = false;
+  }
 };
 
 const contactCourier = () => Taro.showToast({ title: order.value?.logistics?.company || '联系快递', icon: 'none' });

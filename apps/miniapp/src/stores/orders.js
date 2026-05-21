@@ -8,7 +8,7 @@
 //   const o = ordersStore.byId('ORD-2026-0418');
 
 import { defineStore } from 'pinia';
-import { listOrders, getOrder, ApiError } from '@cloud-farm/api-client';
+import { listOrders, getOrder, payOrder, ApiError } from '@cloud-farm/api-client';
 import { ORDERS as MOCK_ORDERS } from './mock';
 
 export const useOrderStore = defineStore('orders', {
@@ -66,6 +66,16 @@ export const useOrderStore = defineStore('orders', {
         if (fallback) this.detailCache[id] = fallback;
         return fallback || null;
       }
+    },
+
+    /** 支付订单(MVP mock):pending → growing(认养)/ shipped(产地直送) */
+    async pay(id) {
+      const updated = await payOrder(id);
+      // 同步更新 list 和 cache
+      const idx = this.list.findIndex((o) => o.id === id);
+      if (idx >= 0) this.list[idx] = updated;
+      this.detailCache[id] = updated;
+      return updated;
     },
 
     clear() {

@@ -31,6 +31,11 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // P8-3 上传后返回的 /uploads/... URL,代理到后端静态资源
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
   resolve: {

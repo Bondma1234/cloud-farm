@@ -4,19 +4,22 @@
 >
 > 远程认养 + 摄像头远程监控 + 农产品直送 的一线城市消费者云种植服务。
 
-## 项目状态(2026-05-07)
+## 项目状态(2026-05-21)
 
-🚧 **MVP 软件层 ≈ 80%**,完整业务闭环跑通(看套餐 → 选地块 → 提交订单 → 看到刚生成的真订单)。
+🚧 **MVP 软件层 ≈ 95%**,完整业务闭环跑通(看套餐 → 选地块 → 下单 → **真支付** → 摄像头 → **发指令 → 农技员接单 + 上传完成照片 → 用户看到生长日记**)。
 
 | 模块 | 状态 |
 |---|---|
 | 三份正式文档(项目书 v3 / 需求 v2 / 架构 v2),md + docx 双份 | ✅ |
-| C 端 miniapp(Taro 4 + Vue 3,17 页面) | ✅ 16/17 走真后端,只剩 my-plot 等 P5 摄像头 |
-| 后端 API(NestJS + Prisma,9 个业务模块 + JWT 鉴权) | ✅ |
+| C 端 miniapp(Taro 4 + Vue 3,17 页面) | ✅ **17/17 全走真后端**,完全无 mock |
+| 后端 API(NestJS + Prisma,**11 个业务模块** + JWT + RBAC) | ✅ |
 | 数据库(SQLite 开发 / 切 MySQL 改 3 行配置) | ✅ |
-| Admin 后台(Vue 3 + Element Plus) | 🟡 套餐展示 OK,真 CRUD 待 P3 |
+| Admin 后台(Vue 3 + Element Plus) | ✅ 真 JWT 登录 + Package CRUD + 跨用户订单 + **指令工单管理 + el-upload 直传** |
+| **指令工单完整闭环**(发指令 → 农技员接单 → 完成 + 上传回执 → 自动写日记) | ✅ |
+| **订单支付 mock flow**(POST /orders/:id/pay,认养类 paid → growing) | ✅ |
+| **文件上传**(POST /api/upload,本地磁盘存,P7 切 OSS 0 改前端) | ✅ |
 | Cloudflare Pages 静态部署 | 🟡 早期 mock 版部署在 cloud-farm-web.pages.dev,真后端版部署待 |
-| 摄像头接萤石云 | 🚧 P5 待做(my-plot 还在 mock 占位) |
+| 摄像头接萤石云(真硬件) | 🟡 P5-mock 已通,等萤石账号 |
 | C 端 Web Portal(独立 Vue 3,大屏看摄像头) | 🚧 P6 待做(用户决定暂缓) |
 
 ## 技术栈
@@ -69,6 +72,30 @@ pnpm dev:admin        # http://localhost:5183  (B 端后台)
 
 整条链路:**Vue 3 → axios + 拦截器 → vite proxy → NestJS Controller → Prisma 事务 → SQLite**,**没有一个 mock**,而且 `POST /api/orders` 用事务保证两个用户同时点同一地块**有且只有一个能成功**(409 冲突防双倍认养)。
 
+## 演示指令工单闭环(P8 W1 新增)
+
+跟上面同一个用户(`13800000001`)登 miniapp,**另外开一个浏览器**(或无痕窗口)登 admin:
+
+1. miniapp:进 **"我的田"** → 看到 P-A-07 小番茄 + 摄像头画面
+2. 点 **💧 浇水** → 确认 → toast "浇水指令已下单"
+3. 进 **"指令历史"** → 看到一条 **待执行** 工单
+4. **另一窗口** 打开 admin <http://localhost:5183>,用 **`19999999999` / `123456`**(role=agronomist)登录
+5. 左栏 **"🔔 指令工单"** → 看到刚发的工单 → 点 **接单** → 状态变执行中
+6. 点 **完成** → 弹窗 → **el-upload 选张图直接上传**(走真 `POST /api/upload`)→ 写完成备注 → 确认
+7. 回 miniapp → "田园动态" 或 my-plot 的"生长日记" → 看到 **"农技员小李给你浇水了"** + 你刚上传的图
+
+这套流程后端实现是 **Prisma 事务**:`PATCH /api/admin/commands/:id/complete` 一次性更新 Command 状态 + 写一条 JournalEntry,失败原子回滚,用户感知不到中间态。
+
+## 演示订单 mock 支付(P8 W1 新增)
+
+1. miniapp 创建一个新订单(走上面的"完整购买闭环"步骤 1-9,会得到 status=pending 的订单)
+2. 进订单详情或订单列表的 **"待付款"** tab
+3. 点 **"去支付"** → toast `支付成功 · 种植中`
+4. 订单状态变为 **growing**(认养类直接进种植中;产地直送类会变 shipped)
+5. 重复点支付 → 后端 400 守卫住 "订单当前状态(种植中)不能支付"
+
+P5+ 接真微信支付时,前端 0 改 — 这条 mock 接口换成调 prepay + 接 wx.requestPayment 回调即可。
+
 ## 仓库结构
 
 ```
@@ -97,20 +124,23 @@ cloud-farm/
 
 ## 后端模块清单
 
-`apps/api/src/modules/` 下 9 个 NestJS 模块,全部带 Swagger 注解,见 `/api/docs`:
+`apps/api/src/modules/` 下 **11 个** NestJS 模块,全部带 Swagger 注解,见 `/api/docs`:
 
 | 模块 | 路由 | 鉴权 |
 |---|---|---|
 | Auth | POST `/api/auth/login`(mock SMS,任意 6 位数字) | 公开 |
-| User | GET `/api/users/me`,Address CRUD | JWT |
-| Package | GET `/api/packages` | 公开 |
+| User | GET `/api/users/me`,Address CRUD,`/me/plot` | JWT |
+| Package | GET / POST / PATCH / DELETE / PATCH:status | 公开 / admin·operator |
 | Plot | GET `/api/plots[/available][/:id]` | 公开 |
-| Order | GET `/api/orders`,GET `/api/orders/:id`,**POST 创建**,**PATCH cancel** | JWT |
-| Camera | (P5 待做,接萤石云 OpenAPI) | JWT |
-| Journal | GET `/api/journal[?type=&plotId=]` + `:id` | 公开 |
-| Crop | GET `/api/crops[?season=]` + `:id` | 公开 |
-| Photo | GET `/api/photos`(at 已格式化"刚刚 / X 天前") | 公开 |
-| Command | GET `/api/commands[?type=]`(只返当前用户的) | JWT |
+| Order | GET / GET:id / **POST 创建** / **PATCH cancel** / **POST :id/pay** | JWT |
+| Camera | GET `:plotId/url` / POST `:plotId/ptz` / POST `:plotId/snapshot`(P5-mock,自动写 Journal) | JWT |
+| Journal | GET `?type=&plotId=` + `:id` | 公开 |
+| Crop | GET `?season=` + `:id` | 公开 |
+| Photo | GET `/photos`(at 已格式化"刚刚 / X 天前") | 公开 |
+| Command | GET `?type=`(用户自己的) / **POST 发指令**(JWT + assertOwn plot) | JWT |
+| **Upload** | **POST `/api/upload`**(multipart,5MB,只图片);静态 `/uploads/*` | JWT |
+| Admin · Order | GET `/admin/orders?status=&userId=&q=` / PATCH `:id/status` | admin·operator·cs |
+| **Admin · Command** | **GET / PATCH `:id/accept` / PATCH `:id/complete`**(完成时事务内写 Journal) | admin·operator·agronomist |
 
 横切关注:全局 `ValidationPipe` + `TransformInterceptor`(统一 `{code,message,data}` 包装)+ `AllExceptionsFilter` + CORS + Swagger。
 
@@ -121,8 +151,8 @@ cloud-farm/
 | 用户 | login | ✅ 真 JWT 登录 |
 | 首页 | home | ✅ 真套餐 + 真动态 feed |
 | 认养 | packages / package-detail / **plot-picker** / **checkout** | ✅ 全套真接口,**完整下单** |
-| 我的田 | my-plot | 🚧 mock(等 P5 摄像头) |
-| 我的田 | commands(指令历史) | ✅ 真指令 |
+| 我的田 | my-plot | ✅ P5-mock 已通,摄像头 + PTZ + 抓拍 + **真发指令**全真接口 |
+| 我的田 | commands(指令历史) | ✅ 真指令,**支持发新指令**;状态 pending/executing/completed 实时联动 |
 | 内容 | journal(动态)/ crops(作物百科)/ photos(照片墙) | ✅ |
 | 订单 | orders / order-detail | ✅(取消订单走真接口) |
 | 地址 | address / address-edit | ✅ POST/PATCH/DELETE 全真 |
@@ -141,8 +171,11 @@ cloud-farm/
 | **P4-E** miniapp 接 Auth/User/Order | login / profile / orders / order-detail / address 5 页接真 API | ✅ |
 | **P4-G** 内容模块全打通 | Journal/Crop/Photo/Command 4 模块 + 4 页接真 API | ✅ |
 | **P4-H** 业务流程闭环 | Plot/Address CRUD/Order create+cancel + 5 页全接,完整购买链路 | ✅ |
-| **P3** Admin 完整版 | 真 JWT 登录 + 套餐 CRUD + 订单管理(B 端管所有用户) | 🚧 待开始 |
-| **P5** 摄像头接萤石云 | my-plot 接真摄像头 + EZOPEN 播流 + 拍照抓帧 | 🚧 待开始(需要先注册萤石账号) |
+| **P3** Admin 完整版 | 真 JWT 登录 + 套餐 CRUD + 订单管理 + RBAC | ✅ |
+| **P5-mock** 摄像头模块 | CameraModule + my-plot 接通真后端(mock 地址) | ✅ |
+| **P8 W1** 指令/支付/上传(本轮) | Command 完整闭环 + 订单 mock pay + UploadModule + Admin /commands 页 + 性能优化(layout 抽离 + EP optimizeDeps,主 chunk -85%) | ✅ |
+| **P8 W2** 工程质量 | Admin 用户管理 + ECharts 看板 + 测试覆盖 + CI / 错误收集 | 🚧 待开始 |
+| **P5** 摄像头接萤石云(真硬件) | CameraService 里把 mock 地址换 EZOPEN OpenAPI 即可 | 🚧 待萤石账号 |
 | **P6** C 端 Web Portal 拆分 | apps/web/ 独立 Vue 3,大屏看监控 | 🚧 待开始(用户决定暂缓) |
 | **P7** 部署上云 | 域名 / ICP / ECS / Docker / 微信支付商户号 | 🚧 待开始(法务先行) |
 

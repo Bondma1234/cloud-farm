@@ -69,11 +69,21 @@ export function createHttpClient(opts: CreateClientOptions = {}): AxiosInstance 
     },
     (err) => {
       const data = err?.response?.data;
+      const status = err?.response?.status ?? -1;
+      // 401:token 过期 / 没带,自动清登录态。让上层(路由守卫/UI)感知到。
+      // 不在拦截器里直接跳转,跳转是 UI 层职责;但确保下次访问 isLoggedIn 返回 false,
+      // 并 dispatch 一个全局事件,上层可以监听来做"跳 /login"。
+      if (status === 401) {
+        memoryToken = null;
+        writePersistedToken(null);
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new CustomEvent('cloud-farm:unauthorized'));
+        }
+      }
       if (data && typeof data === 'object' && 'code' in data) {
         const env = data as ApiEnvelope<unknown>;
         return Promise.reject(new ApiError(env.message || err.message, env.code, data));
       }
-      const status = err?.response?.status ?? -1;
       return Promise.reject(new ApiError(err.message || '网络错误', status, err));
     },
   );

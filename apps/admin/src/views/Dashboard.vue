@@ -1,12 +1,6 @@
 <template>
-  <el-container class="dashboard">
-    <admin-aside />
-
-    <el-container>
-      <admin-header />
-
-      <el-main>
-        <el-row :gutter="20">
+  <div class="dashboard">
+    <el-row :gutter="20">
           <el-col :span="6" v-for="s in stats" :key="s.label">
             <el-card shadow="hover">
               <div class="stat">
@@ -51,16 +45,12 @@
               : '当前接通: GET /api/packages → 真实 SQLite 数据库'
           "
         />
-      </el-main>
-    </el-container>
-  </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { listPackages, ApiError } from '@cloud-farm/api-client';
-import AdminAside from '@/components/AdminAside.vue';
-import AdminHeader from '@/components/AdminHeader.vue';
 
 // 拉真实套餐数 - 后端接通验证
 const packageCount = ref<number | string>('—');
@@ -103,7 +93,7 @@ onMounted(fetchStats);
 
 <style scoped>
 .dashboard {
-  height: 100vh;
+  /* layout 已经管高度,这里只放业务样式 */
 }
 .stat {
   text-align: center;
