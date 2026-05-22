@@ -9,10 +9,47 @@ import './styles/global.css';
 import App from './App.vue';
 import { router } from './router';
 import { useAuthStore } from '@/stores/auth';
+import { reportError } from '@cloud-farm/api-client';
 
 const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia).use(router);
+
+// P8 W2-5: 错误上报 — Vue 组件内、Promise 未捕获、原生 onerror 三个口径全盖到
+app.config.errorHandler = (err, _instance, info) => {
+  const e = err as Error;
+  // eslint-disable-next-line no-console
+  console.error('[Vue errorHandler]', info, e);
+  reportError({
+    source: 'admin',
+    message: `${e?.message || String(err)} @ ${info}`,
+    stack: e?.stack ?? '',
+    url: window.location.href,
+    userAgent: navigator.userAgent.slice(0, 280),
+  });
+};
+window.addEventListener('unhandledrejection', (ev) => {
+  const reason = ev.reason as Error | string;
+  const message = typeof reason === 'string' ? reason : reason?.message || 'unhandledrejection';
+  // eslint-disable-next-line no-console
+  console.error('[unhandledrejection]', reason);
+  reportError({
+    source: 'admin',
+    message,
+    stack: (reason as Error)?.stack ?? '',
+    url: window.location.href,
+    userAgent: navigator.userAgent.slice(0, 280),
+  });
+});
+window.addEventListener('error', (ev) => {
+  reportError({
+    source: 'admin',
+    message: ev.message || 'window.error',
+    stack: ev.error?.stack ?? '',
+    url: ev.filename || window.location.href,
+    userAgent: navigator.userAgent.slice(0, 280),
+  });
+});
 
 // 401 全局桥:api-client 401 拦截器 dispatch 'cloud-farm:unauthorized'
 // → 这里清登录态 + 路由跳 /login,避免在受限页面反复发 401

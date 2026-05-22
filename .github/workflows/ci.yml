@@ -1,0 +1,74 @@
+# ==========================================================================
+# 云上田园 CI
+# - 每次 push/PR 到 main 跑这个 workflow
+# - 阶段:install → 后端 e2e + typecheck → admin/miniapp build
+# - 不跑 docker compose(MySQL),后端用 SQLite + Prisma 直接跑
+# ==========================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      # ---------- 后端 ----------
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: pnpm exec prisma generate
+
+      - name: API tsc check
+        working-directory: apps/api
+        run: pnpm exec tsc --noEmit
+
+      - name: API DB push + seed(SQLite,e2e 准备数据)
+        working-directory: apps/api
+        env:
+          DATABASE_URL: file:./test.db
+        run: |
+          pnpm exec prisma db push --skip-generate
+          pnpm db:seed
+
+      - name: API e2e tests
+        working-directory: apps/api
+        env:
+          DATABASE_URL: file:./test.db
+        run: pnpm test
+
+      # ---------- 前端 ----------
+      - name: api-client tsc
+        working-directory: packages/api-client
+        run: pnpm exec tsc --noEmit
+
+      - name: Admin vue-tsc + build
+        working-directory: apps/admin
+        run: |
+          pnpm exec vue-tsc --noEmit
+          pnpm run build
+
+      - name: Miniapp H5 build
+        working-directory: apps/miniapp
+        run: pnpm run web:build

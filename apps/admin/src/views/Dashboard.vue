@@ -1,119 +1,286 @@
 <template>
   <div class="dashboard">
-    <el-row :gutter="20">
-          <el-col :span="6" v-for="s in stats" :key="s.label">
-            <el-card shadow="hover">
-              <div class="stat">
-                <div class="stat-num" :class="{ live: s.live }">{{ s.value }}</div>
-                <div class="stat-label">
-                  {{ s.label }}
-                  <el-tag v-if="s.live" type="success" size="small" effect="plain">实时</el-tag>
-                </div>
+    <el-alert
+      v-if="error"
+      type="error"
+      :title="`后端连接失败: ${error}`"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px"
+    />
+    <el-skeleton v-else-if="loading" :rows="8" animated />
+
+    <template v-else-if="data">
+      <!-- 4 KPI 卡 -->
+      <el-row :gutter="16">
+        <el-col :span="6">
+          <el-card shadow="hover">
+            <div class="kpi">
+              <div class="kpi-l">用户总数</div>
+              <div class="kpi-v primary">{{ data.totals.userCount }}</div>
+              <div class="kpi-s">含 customer / 农技员 / 客服 / 运营 / 管理员</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover">
+            <div class="kpi">
+              <div class="kpi-l">累计 GMV</div>
+              <div class="kpi-v danger">¥ {{ data.totals.gmvAll.toLocaleString() }}</div>
+              <div class="kpi-s">已付款及以后状态的订单求和</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover">
+            <div class="kpi">
+              <div class="kpi-l">订单总数</div>
+              <div class="kpi-v warning">{{ data.totals.orderCount }}</div>
+              <div class="kpi-s">含取消在内</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" :class="{ alert: data.totals.commandPending > 0 }">
+            <div class="kpi">
+              <div class="kpi-l">待处理工单</div>
+              <div class="kpi-v" :class="data.totals.commandPending > 0 ? 'danger' : 'success'">
+                {{ data.totals.commandPending }}
               </div>
-            </el-card>
-          </el-col>
-        </el-row>
+              <div class="kpi-s">农技员请尽快接单</div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
 
-        <el-divider />
+      <!-- 第二行:GMV 30 天趋势 + 摄像头在线率 -->
+      <el-row :gutter="16" style="margin-top: 16px">
+        <el-col :span="16">
+          <el-card>
+            <template #header>
+              <strong>近 30 天 GMV(¥)</strong>
+            </template>
+            <v-chart :option="gmvOption" autoresize style="height: 260px" />
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card>
+            <template #header>
+              <strong>摄像头在线率</strong>
+            </template>
+            <v-chart :option="cameraOption" autoresize style="height: 260px" />
+          </el-card>
+        </el-col>
+      </el-row>
 
-        <el-card>
-          <template #header>
-            <strong>开发进度</strong>
-          </template>
-          <el-table :data="phases" stripe>
-            <el-table-column prop="phase" label="阶段" width="100" />
-            <el-table-column prop="title" label="内容" />
-            <el-table-column prop="status" label="状态" width="120">
-              <template #default="{ row }">
-                <el-tag :type="row.status === '已完成' ? 'success' : row.status === '进行中' ? 'warning' : 'info'">
-                  {{ row.status }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
+      <!-- 第三行:订单分布 + 工单分布 + 用户分布 -->
+      <el-row :gutter="16" style="margin-top: 16px">
+        <el-col :span="8">
+          <el-card>
+            <template #header>
+              <strong>订单状态分布</strong>
+            </template>
+            <v-chart :option="orderPieOption" autoresize style="height: 240px" />
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card>
+            <template #header>
+              <strong>工单状态分布</strong>
+            </template>
+            <v-chart :option="commandPieOption" autoresize style="height: 240px" />
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card>
+            <template #header>
+              <strong>用户角色分布</strong>
+            </template>
+            <v-chart :option="userPieOption" autoresize style="height: 240px" />
+          </el-card>
+        </el-col>
+      </el-row>
 
-        <el-alert
-          style="margin-top: 24px"
-          :type="apiError ? 'error' : 'success'"
-          :closable="false"
-          show-icon
-          :title="apiError ? '后端连接失败' : '后端连接正常'"
-          :description="
-            apiError
-              ? `${apiError} (检查 pnpm dev:api 是否在跑)`
-              : '当前接通: GET /api/packages → 真实 SQLite 数据库'
-          "
-        />
+      <!-- 套餐 top 3 -->
+      <el-card style="margin-top: 16px">
+        <template #header>
+          <strong>套餐销量 Top 3</strong>
+        </template>
+        <v-chart v-if="data.packageTop.length" :option="packageBarOption" autoresize style="height: 240px" />
+        <el-empty v-else description="还没有套餐订单" :image-size="80" />
+      </el-card>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { listPackages, ApiError } from '@cloud-farm/api-client';
+import { use } from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+import { LineChart, PieChart, BarChart, GaugeChart } from 'echarts/charts';
+import {
+  TitleComponent, TooltipComponent, GridComponent, LegendComponent, DatasetComponent,
+} from 'echarts/components';
+import VChart from 'vue-echarts';
+import { getAdminStats, type AdminStats, ApiError } from '@cloud-farm/api-client';
 
-// 拉真实套餐数 - 后端接通验证
-const packageCount = ref<number | string>('—');
-const apiError = ref<string | null>(null);
+use([
+  CanvasRenderer,
+  LineChart, PieChart, BarChart, GaugeChart,
+  TitleComponent, TooltipComponent, GridComponent, LegendComponent, DatasetComponent,
+]);
 
-async function fetchStats() {
+const data = ref<AdminStats | null>(null);
+const loading = ref(true);
+const error = ref<string | null>(null);
+
+async function load() {
+  loading.value = true;
+  error.value = null;
   try {
-    const list = await listPackages();
-    packageCount.value = list.length;
+    data.value = await getAdminStats();
   } catch (e) {
-    apiError.value = e instanceof ApiError ? `${e.message} (code=${e.code})` : (e as Error).message;
-    packageCount.value = '✕';
+    error.value = e instanceof ApiError ? `${e.message} (code=${e.code})` : (e as Error).message;
+  } finally {
+    loading.value = false;
   }
 }
 
-const stats = computed(() => [
-  { label: '上架套餐', value: packageCount.value, live: true },
-  { label: '认养用户', value: '— / 800' },
-  { label: '今日订单', value: '—' },
-  { label: '摄像头在线', value: '— / —' },
-]);
+onMounted(load);
 
-const phases = [
-  { phase: 'P1', title: '架构地基: monorepo + docker + apps 骨架', status: '已完成' },
-  { phase: 'P2', title: '后端 API: NestJS + Prisma + 7 张表 + 套餐接口', status: '已完成' },
-  { phase: 'P2+B', title: 'Admin 接通后端,套餐数据真实显示', status: '已完成' },
-  { phase: 'P4-C', title: 'miniapp 套餐接 API + mock 兜底', status: '已完成' },
-  { phase: 'P2+D', title: '后端 Auth + User + Order + JWT', status: '已完成' },
-  { phase: 'P4-E', title: 'miniapp 接 Auth/User/Order 5 页', status: '已完成' },
-  { phase: 'P4-G', title: 'Journal/Crop/Photo/Command 4 模块全打通', status: '已完成' },
-  { phase: 'P4-H', title: '业务流程闭环: 选地块 / 创建订单 / Address CRUD', status: '已完成' },
-  { phase: 'P3', title: 'Admin 完整: 真登录 / 套餐 CRUD / 订单管理', status: '已完成' },
-  { phase: 'P5', title: '摄像头接萤石云 + 拍照抓帧 + my-plot', status: '待开始' },
-  { phase: 'P6', title: 'C 端 Web Portal 拆分(独立 Vue 3)', status: '待开始' },
-  { phase: 'P7', title: '部署上云 + 域名 / ICP / 微信支付', status: '待开始' },
-];
+// ============ ECharts options ============
+// 主色 #4ca777, 警告 #f4b942, 危险 #e57373
 
-onMounted(fetchStats);
+const gmvOption = computed(() => ({
+  tooltip: { trigger: 'axis' },
+  grid: { left: 50, right: 24, top: 24, bottom: 40 },
+  xAxis: {
+    type: 'category',
+    data: data.value?.gmv30d.map((p) => p.date.slice(5)) ?? [],
+    axisLabel: { interval: 4, fontSize: 11 },
+  },
+  yAxis: { type: 'value', axisLabel: { fontSize: 11 } },
+  series: [
+    {
+      name: 'GMV',
+      type: 'line',
+      data: data.value?.gmv30d.map((p) => p.gmv) ?? [],
+      smooth: true,
+      lineStyle: { color: '#4ca777', width: 2 },
+      areaStyle: { color: 'rgba(76,167,119,0.18)' },
+      itemStyle: { color: '#4ca777' },
+    },
+  ],
+}));
+
+const cameraOption = computed(() => ({
+  series: [
+    {
+      type: 'gauge',
+      startAngle: 220,
+      endAngle: -40,
+      min: 0,
+      max: 100,
+      progress: { show: true, width: 18 },
+      axisLine: { lineStyle: { width: 18, color: [[1, '#ebeef5']] } },
+      pointer: { show: false },
+      axisTick: { show: false },
+      splitLine: { show: false },
+      axisLabel: { show: false },
+      itemStyle: { color: '#4ca777' },
+      detail: {
+        valueAnimation: true,
+        offsetCenter: [0, '20%'],
+        fontSize: 30,
+        fontWeight: 700,
+        formatter: `${data.value?.cameraOnline.online ?? 0} / ${data.value?.cameraOnline.total ?? 0}`,
+        color: '#2e7d32',
+      },
+      data: [{ value: Math.round((data.value?.cameraOnline.rate ?? 0) * 100), name: '' }],
+    },
+  ],
+}));
+
+const orderPieOption = computed(() => makePieOption(data.value?.orderByStatus ?? []));
+const commandPieOption = computed(() => makePieOption(data.value?.commandByStatus ?? []));
+const userPieOption = computed(() => makePieOption(data.value?.userByRole ?? []));
+
+function makePieOption(kvs: { label: string; value: number }[]) {
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { orient: 'horizontal', bottom: 0, textStyle: { fontSize: 11 } },
+    color: ['#4ca777', '#f4b942', '#e57373', '#3498db', '#9b59b6', '#7f8c8d', '#16a085'],
+    series: [
+      {
+        type: 'pie',
+        radius: ['38%', '62%'],
+        center: ['50%', '45%'],
+        data: kvs.map((kv) => ({ name: kv.label, value: kv.value })),
+        label: { show: false },
+        labelLine: { show: false },
+      },
+    ],
+  };
+}
+
+const packageBarOption = computed(() => ({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  grid: { left: 100, right: 50, top: 12, bottom: 30 },
+  xAxis: { type: 'value', axisLabel: { fontSize: 11 } },
+  yAxis: {
+    type: 'category',
+    data: data.value?.packageTop.map((p) => p.name) ?? [],
+    axisLabel: { fontSize: 12 },
+  },
+  series: [
+    {
+      name: '订单数',
+      type: 'bar',
+      data: data.value?.packageTop.map((p) => p.orderCount) ?? [],
+      itemStyle: { color: '#4ca777' },
+      barWidth: 22,
+      label: {
+        show: true,
+        position: 'right',
+        fontSize: 12,
+        formatter: (param: { dataIndex: number; value: number }) => {
+          const gmv = data.value?.packageTop[param.dataIndex]?.gmv ?? 0;
+          return `${param.value} 单 · ¥${gmv.toLocaleString()}`;
+        },
+      },
+    },
+  ],
+}));
 </script>
 
 <style scoped>
 .dashboard {
-  /* layout 已经管高度,这里只放业务样式 */
+  /* layout 管高度 */
 }
-.stat {
+.kpi {
   text-align: center;
-  padding: 8px 0;
+  padding: 4px 0;
 }
-.stat-num {
-  font-size: 24px;
-  font-weight: 700;
-  color: #888;
-}
-.stat-num.live {
-  color: #2e7d32;
-}
-.stat-label {
+.kpi-l {
   font-size: 13px;
   color: #888;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+}
+.kpi-v {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 6px 0 2px;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-v.primary { color: #2e7d32; }
+.kpi-v.danger { color: #e57373; }
+.kpi-v.warning { color: #c08400; }
+.kpi-v.success { color: #4ca777; }
+.kpi-s {
+  font-size: 11px;
+  color: #bbb;
+}
+.alert {
+  border-color: #e57373;
 }
 </style>

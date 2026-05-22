@@ -17,6 +17,14 @@
         <el-icon><Bell /></el-icon>
         <span>指令工单</span>
       </el-menu-item>
+      <el-menu-item index="/users">
+        <el-icon><User /></el-icon>
+        <span>用户管理</span>
+      </el-menu-item>
+      <el-menu-item index="/errors">
+        <el-icon><Warning /></el-icon>
+        <span>错误日志</span>
+      </el-menu-item>
       <el-sub-menu index="farm">
         <template #title>
           <el-icon><MapLocation /></el-icon>
@@ -45,7 +53,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { Monitor, Tickets, MapLocation, Document, Setting, Bell } from '@element-plus/icons-vue';
+import { Monitor, Tickets, MapLocation, Document, Setting, Bell, User, Warning } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const active = computed(() => route.path);

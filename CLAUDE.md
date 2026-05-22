@@ -421,6 +421,56 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
     - 拉用户认养地块 → 发施肥指令 → 越权 P-A-99 返 403 → 农技员看到 pending → accept → complete with photo → journal 自动多一条 → 支付 pending 订单 → growing → 重复支付 400 → 文件上传 + HTTP 200 拉回
   - **构建确认**:admin prod build 主 chunk 1064KB → 153KB(gzip 353 → 60KB,降 83%),miniapp H5 build 136 modules 不变
 
+- **★ P8 W2 工程质量(2026-05-22)** ——
+  - **W2-1 Admin 用户管理**:
+    - schema 加 `User.active` 软禁用字段;migration `user_add_active`
+    - AuthService.login 拒绝 active=false 的账号("账号已被禁用")
+    - 新建 `AdminUserController`(`/api/admin/users`,RBAC=admin):
+      - GET 列表(role/q 过滤 + take 500 + 脱敏手机号 + _count.orders 联表)
+      - PATCH `:id/role`(改自己拒绝)
+      - PATCH `:id/status`(改自己拒绝 + 不能禁其他 admin)
+    - api-client 加 `listAdminUsers / setAdminUserRole / setAdminUserActive`
+    - Admin 新增 `/users` 视图(改角色下拉 + 禁用/启用按钮 + 自身禁用)
+  - **W2-2 Admin 看板**:
+    - 新建 `AdminStatsController`(`/api/admin/stats`,admin/operator)聚合 7 项:
+      - totals(用户数/订单数/累计 GMV/待处理工单)
+      - userByRole / orderByStatus / commandByStatus(Prisma groupBy)
+      - **gmv30d**(查 30 天订单后 JS 聚合 + 0 值补位,SQLite/MySQL 通用)
+      - packageTop(Prisma groupBy + take 3)
+      - cameraOnline rate
+    - Admin Dashboard 整改:装 `echarts` + `vue-echarts`,4 KPI 卡 + GMV 30 天折线 + 摄像头 gauge + 订单/工单/用户 3 个饼图 + 套餐 top3 横向柱状
+    - vite optimizeDeps 加 echarts / vue-echarts(预打成 1 chunk,dev 启动秒开)
+  - **W2-3 后端 e2e 测试**:
+    - 装 `jest + ts-jest + supertest + @nestjs/testing@10`
+    - 新建 `test/` 目录 + `tsconfig.test.json`(测试单独 tsconfig,不污染 nest build 输出)
+    - `e2e-setup.ts`:`createTestApp()` + `loginAsDemoUser/Agronomist/Admin` 工具函数
+    - `command-workflow.e2e-spec.ts` 7 个场景:拉地块 / 发指令 / 越权 403 / pending 列表 / accept / complete + journal +1 / 普通用户调 admin 接口 403
+    - `order-payment.e2e-spec.ts`:pending → pay → growing → 重复支付 400
+    - **8 个测试全过,14.5s**
+    - npm 脚本:`pnpm test` 直接跑 jest
+  - **W2-4 GitHub Actions CI**:
+    - `.github/workflows/ci.yml`:每次 push/PR 自动跑
+    - 步骤:checkout → pnpm + Node20 → install --frozen-lockfile → prisma generate → API tsc → DB push + seed → API e2e → api-client tsc → admin vue-tsc + build → miniapp H5 build
+    - SQLite 跑 e2e,不依赖 docker compose;timeout 15min
+  - **W2-5 错误收集兜底(轻量)**:
+    - schema 加 `ErrorLog` 表(source / message / stack / url / userAgent / userId / at)
+    - 新建 `ErrorLogModule`:
+      - POST `/api/errors`(**公开**,匿名可上报)
+      - GET `/api/admin/error-logs`(admin/operator)
+    - api-client 加 `reportError`(失败自吞,绝不二次抛错免循环)
+    - admin main.ts 装 3 个口径:`app.config.errorHandler` / `window.unhandledrejection` / `window.error`
+    - miniapp main.web.js 同样装(动态 import 避开 SSR-only env)
+    - Admin 新增 `/errors` 列表页(可按 source=admin/miniapp 过滤,堆栈截断显示)
+    - 不接 Sentry,P7 真上线再换重型方案
+  - **e2e 验收**:
+    - 8/8 jest e2e 全过
+    - 手动 curl 5 项:POST /errors 写入 → admin stats 7 项数据 → admin users 3 人 → admin error-logs 1 条
+    - admin prod build:Dashboard chunk 581KB / gzip 200KB(ECharts 整包,只在打开看板时加载,可接受)
+  - **架构亮点**:
+    - 看板后端把"0 值补位"做完,前端 ECharts 拿到的 gmv30d 就是 30 个数组,直接渲染
+    - 错误上报匿名 + 静默,绝不会因为上报失败再触发新错误
+    - `tsconfig.test.json` 单独管 jest,nest build 的 rootDir 不被污染
+
 🚧 **下一步路线**(架构 v2 §10)
 
 | 阶段 | 内容 | 当前状态 |
@@ -436,7 +486,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P3 Admin 完整版** | RBAC + Package CRUD + Admin Orders + 真 JWT 登录 + 路由守卫 | ✅ 已完成 |
 | **P5-mock 摄像头模块** | CameraModule + /users/me/plot + my-plot 走真接口(mock 地址) | ✅ 已完成 |
 | **★ P8 W1 指令/支付/上传** | Command 完整闭环 + 订单 mock 支付 + UploadModule + Admin /commands 页 + 性能优化(layout 抽离 + EP optimizeDeps) | ✅ 已完成 |
-| **P8 W2 工程质量** | Admin 用户管理 + 简单看板 ECharts / 测试覆盖 / CI / 错误收集 | 🚧 待开始 |
+| **★ P8 W2 工程质量** | Admin 用户管理 + 看板 ECharts + 后端 jest e2e + GitHub Actions CI + 轻量错误收集 | ✅ 已完成 |
 | **P5 真萤石云接入** | CameraService 里把 mock 地址换成 EZOPEN OpenAPI 调用 | 待萤石账号 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | **P7 部署上云** | 域名 + ICP + ECS + Docker + 微信支付商户号 | 法务先行,暂搁置 |

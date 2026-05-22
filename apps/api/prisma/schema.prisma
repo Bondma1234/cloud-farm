@@ -21,6 +21,8 @@ model User {
   avatar    String   @default("🧑‍🌾")
   level     String   @default("Lv.1")
   role      String   @default("customer") // customer / agronomist / cs / operator / admin
+  // P8 W2: 软禁用,active=false 时 JWT 校验直接拒登,但历史订单还在
+  active    Boolean  @default(true)
   openid    String?  @unique
   unionid   String?
   createdAt DateTime @default(now())
@@ -183,6 +185,20 @@ model PhotoPost {
   status    String   @default("active") // active / removed
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ============ ErrorLog(前端错误收集) ============
+// P8 W2-5: 前端 Vue errorHandler / unhandledrejection 抛错时 POST 过来
+// 不挂 user 关联表(防止外键约束让上报失败),只存 userId 数字
+model ErrorLog {
+  id        Int      @id @default(autoincrement())
+  source    String   // 'admin' / 'miniapp'
+  message   String
+  stack     String   @default("")
+  url       String   @default("")
+  userAgent String   @default("")
+  userId    Int?     // 不强外键,可空
+  at        DateTime @default(now())
 }
 
 // ============ Command(指令工单) ============

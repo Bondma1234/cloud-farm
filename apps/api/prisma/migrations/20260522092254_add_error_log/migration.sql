@@ -1,0 +1,11 @@
+-- CreateTable
+CREATE TABLE "ErrorLog" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "source" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "stack" TEXT NOT NULL DEFAULT '',
+    "url" TEXT NOT NULL DEFAULT '',
+    "userAgent" TEXT NOT NULL DEFAULT '',
+    "userId" INTEGER,
+    "at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

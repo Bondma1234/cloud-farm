@@ -26,7 +26,7 @@ export default defineConfig({
   // 否则 dev 模式下按需加载会拆成 70+ 个 JS/CSS,浏览器主线程被海量请求卡死。
   // 改完这条后第一次重启会重新跑 optimize(约 5-10s),后续启动秒开。
   optimizeDeps: {
-    include: ['element-plus', '@element-plus/icons-vue', 'axios'],
+    include: ['element-plus', '@element-plus/icons-vue', 'axios', 'echarts', 'vue-echarts'],
   },
   server: {
     port: 5183,

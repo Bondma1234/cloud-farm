@@ -37,6 +37,11 @@ export class AuthService {
       update: {}, // 已存在时不动
     });
 
+    // P8 W2: 软禁用账号不能登录(被 admin disable 过的)。token 已发出的 15min 内仍有效。
+    if (!user.active) {
+      throw new UnauthorizedException('账号已被禁用,请联系管理员');
+    }
+
     const payload: JwtPayload = {
       sub: user.id,
       phone: user.phone,

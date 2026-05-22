@@ -33,6 +33,16 @@ export const router = createRouter({
           component: () => import('@/views/Commands.vue'),
           meta: { title: '指令工单', requiresAuth: true },
         },
+        {
+          path: 'users',
+          component: () => import('@/views/Users.vue'),
+          meta: { title: '用户管理', requiresAuth: true },
+        },
+        {
+          path: 'errors',
+          component: () => import('@/views/Errors.vue'),
+          meta: { title: '错误日志', requiresAuth: true },
+        },
       ],
     },
   ],

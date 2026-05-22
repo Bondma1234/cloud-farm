@@ -1,6 +1,75 @@
-// ============ Admin · 订单 + 指令工单 管理 API ============
+// ============ Admin · 订单 + 指令工单 + 用户 管理 API ============
 import type { Command } from '@cloud-farm/shared';
 import { get, patch } from '../http';
+
+// ============ 用户管理(P8 W2) ============
+export interface AdminUserItem {
+  id: number;
+  phone: string;        // 脱敏后
+  nickname: string;
+  avatar: string;
+  level: string;
+  role: 'customer' | 'agronomist' | 'cs' | 'operator' | 'admin';
+  active: boolean;
+  createdAt: string;
+  orderCount: number;
+}
+
+export interface AdminUserListQuery {
+  role?: string;
+  q?: string;
+}
+
+export function listAdminUsers(query?: AdminUserListQuery): Promise<AdminUserItem[]> {
+  const params = new URLSearchParams();
+  if (query?.role) params.set('role', query.role);
+  if (query?.q) params.set('q', query.q);
+  const qs = params.toString();
+  return get<AdminUserItem[]>(`/admin/users${qs ? '?' + qs : ''}`);
+}
+
+export function setAdminUserRole(id: number, role: AdminUserItem['role']): Promise<AdminUserItem> {
+  return patch<AdminUserItem>(`/admin/users/${id}/role`, { role });
+}
+
+export function setAdminUserActive(id: number, active: boolean): Promise<AdminUserItem> {
+  return patch<AdminUserItem>(`/admin/users/${id}/status`, { active });
+}
+
+// ============ 看板聚合(P8 W2) ============
+export interface AdminStatKV { label: string; value: number; }
+export interface AdminGmvPoint { date: string; gmv: number; orderCount: number; }
+export interface AdminPackageRank { id: string; name: string; orderCount: number; gmv: number; }
+export interface AdminStats {
+  totals: { userCount: number; orderCount: number; gmvAll: number; commandPending: number };
+  userByRole: AdminStatKV[];
+  orderByStatus: AdminStatKV[];
+  commandByStatus: AdminStatKV[];
+  gmv30d: AdminGmvPoint[];
+  packageTop: AdminPackageRank[];
+  cameraOnline: { online: number; total: number; rate: number };
+}
+
+export function getAdminStats(): Promise<AdminStats> {
+  return get<AdminStats>('/admin/stats');
+}
+
+// ============ 错误日志(P8 W2) ============
+export interface AdminErrorLog {
+  id: number;
+  source: string;
+  message: string;
+  stack: string;
+  url: string;
+  userAgent: string;
+  userId?: number;
+  at: string;
+}
+
+export function listAdminErrorLogs(source?: string): Promise<AdminErrorLog[]> {
+  const qs = source ? `?source=${encodeURIComponent(source)}` : '';
+  return get<AdminErrorLog[]>(`/admin/error-logs${qs}`);
+}
 
 export interface AdminOrderListItem {
   id: string;

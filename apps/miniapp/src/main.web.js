@@ -292,4 +292,43 @@ if (typeof window !== 'undefined') {
 const app = createApp(SiteShell);
 app.use(createPinia());
 app.use(router);
+
+// P8 W2-5: 前端错误上报 — 静默,不让上报二次错
+import('@cloud-farm/api-client').then(({ reportError }) => {
+  app.config.errorHandler = (err, _instance, info) => {
+    const e = err;
+    // eslint-disable-next-line no-console
+    console.error('[Vue errorHandler]', info, e);
+    reportError({
+      source: 'miniapp',
+      message: `${e?.message || String(err)} @ ${info}`,
+      stack: e?.stack || '',
+      url: typeof window !== 'undefined' ? window.location.href : '',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 280) : '',
+    });
+  };
+  if (typeof window !== 'undefined') {
+    window.addEventListener('unhandledrejection', (ev) => {
+      const reason = ev.reason;
+      const message = typeof reason === 'string' ? reason : reason?.message || 'unhandledrejection';
+      reportError({
+        source: 'miniapp',
+        message,
+        stack: reason?.stack || '',
+        url: window.location.href,
+        userAgent: navigator.userAgent.slice(0, 280),
+      });
+    });
+    window.addEventListener('error', (ev) => {
+      reportError({
+        source: 'miniapp',
+        message: ev.message || 'window.error',
+        stack: ev.error?.stack || '',
+        url: ev.filename || window.location.href,
+        userAgent: navigator.userAgent.slice(0, 280),
+      });
+    });
+  }
+});
+
 app.mount('#app');

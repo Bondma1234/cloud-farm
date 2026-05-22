@@ -4,20 +4,21 @@
 >
 > 远程认养 + 摄像头远程监控 + 农产品直送 的一线城市消费者云种植服务。
 
-## 项目状态(2026-05-21)
+## 项目状态(2026-05-22)
 
-🚧 **MVP 软件层 ≈ 95%**,完整业务闭环跑通(看套餐 → 选地块 → 下单 → **真支付** → 摄像头 → **发指令 → 农技员接单 + 上传完成照片 → 用户看到生长日记**)。
+🚧 **MVP 软件层 ≈ 98%**,完整业务闭环跑通(看套餐 → 选地块 → 下单 → 真支付 → 摄像头 → 发指令 → 农技员接单 + 上传完成照片 → 用户看到生长日记)。
 
 | 模块 | 状态 |
 |---|---|
 | 三份正式文档(项目书 v3 / 需求 v2 / 架构 v2),md + docx 双份 | ✅ |
 | C 端 miniapp(Taro 4 + Vue 3,17 页面) | ✅ **17/17 全走真后端**,完全无 mock |
-| 后端 API(NestJS + Prisma,**11 个业务模块** + JWT + RBAC) | ✅ |
+| 后端 API(NestJS + Prisma,**14 个业务模块** + JWT + RBAC) | ✅ |
 | 数据库(SQLite 开发 / 切 MySQL 改 3 行配置) | ✅ |
-| Admin 后台(Vue 3 + Element Plus) | ✅ 真 JWT 登录 + Package CRUD + 跨用户订单 + **指令工单管理 + el-upload 直传** |
-| **指令工单完整闭环**(发指令 → 农技员接单 → 完成 + 上传回执 → 自动写日记) | ✅ |
-| **订单支付 mock flow**(POST /orders/:id/pay,认养类 paid → growing) | ✅ |
-| **文件上传**(POST /api/upload,本地磁盘存,P7 切 OSS 0 改前端) | ✅ |
+| Admin 后台(Vue 3 + Element Plus + **ECharts 看板**) | ✅ 真 JWT 登录 + Package CRUD + 跨用户订单 + 指令工单 + **用户管理 + 看板 + 错误日志** |
+| 指令工单完整闭环 / 订单支付 mock flow / 文件上传 | ✅ |
+| **后端 e2e 测试**(jest + supertest,8 个场景) | ✅ |
+| **GitHub Actions CI**(每次 push 自动跑全栈检查) | ✅ |
+| **前端错误收集**(Vue errorHandler + unhandledrejection,上报到后端) | ✅ |
 | Cloudflare Pages 静态部署 | 🟡 早期 mock 版部署在 cloud-farm-web.pages.dev,真后端版部署待 |
 | 摄像头接萤石云(真硬件) | 🟡 P5-mock 已通,等萤石账号 |
 | C 端 Web Portal(独立 Vue 3,大屏看摄像头) | 🚧 P6 待做(用户决定暂缓) |
@@ -124,7 +125,7 @@ cloud-farm/
 
 ## 后端模块清单
 
-`apps/api/src/modules/` 下 **11 个** NestJS 模块,全部带 Swagger 注解,见 `/api/docs`:
+`apps/api/src/modules/` 下 **14 个** NestJS 模块,全部带 Swagger 注解,见 `/api/docs`:
 
 | 模块 | 路由 | 鉴权 |
 |---|---|---|
@@ -141,6 +142,9 @@ cloud-farm/
 | **Upload** | **POST `/api/upload`**(multipart,5MB,只图片);静态 `/uploads/*` | JWT |
 | Admin · Order | GET `/admin/orders?status=&userId=&q=` / PATCH `:id/status` | admin·operator·cs |
 | **Admin · Command** | **GET / PATCH `:id/accept` / PATCH `:id/complete`**(完成时事务内写 Journal) | admin·operator·agronomist |
+| **Admin · User** | **GET / PATCH `:id/role` / PATCH `:id/status`**(改自己拒绝,不能禁其他 admin) | admin |
+| **Admin · Stats** | **GET `/admin/stats`** 聚合(totals/userByRole/订单&工单按状态/gmv30d 补 0 值/packageTop/cameraOnline) | admin·operator |
+| **ErrorLog** | **POST `/api/errors`**(匿名公开上报) + **GET `/admin/error-logs`** | 公开 / admin·operator |
 
 横切关注:全局 `ValidationPipe` + `TransformInterceptor`(统一 `{code,message,data}` 包装)+ `AllExceptionsFilter` + CORS + Swagger。
 
@@ -173,8 +177,8 @@ cloud-farm/
 | **P4-H** 业务流程闭环 | Plot/Address CRUD/Order create+cancel + 5 页全接,完整购买链路 | ✅ |
 | **P3** Admin 完整版 | 真 JWT 登录 + 套餐 CRUD + 订单管理 + RBAC | ✅ |
 | **P5-mock** 摄像头模块 | CameraModule + my-plot 接通真后端(mock 地址) | ✅ |
-| **P8 W1** 指令/支付/上传(本轮) | Command 完整闭环 + 订单 mock pay + UploadModule + Admin /commands 页 + 性能优化(layout 抽离 + EP optimizeDeps,主 chunk -85%) | ✅ |
-| **P8 W2** 工程质量 | Admin 用户管理 + ECharts 看板 + 测试覆盖 + CI / 错误收集 | 🚧 待开始 |
+| **P8 W1** 指令/支付/上传 | Command 完整闭环 + 订单 mock pay + UploadModule + Admin /commands 页 + 性能优化(layout 抽离 + EP optimizeDeps,主 chunk -85%) | ✅ |
+| **P8 W2** 工程质量(本轮) | Admin 用户管理 + ECharts 看板 + 后端 jest e2e(8 测试)+ GitHub Actions CI + 错误收集 | ✅ |
 | **P5** 摄像头接萤石云(真硬件) | CameraService 里把 mock 地址换 EZOPEN OpenAPI 即可 | 🚧 待萤石账号 |
 | **P6** C 端 Web Portal 拆分 | apps/web/ 独立 Vue 3,大屏看监控 | 🚧 待开始(用户决定暂缓) |
 | **P7** 部署上云 | 域名 / ICP / ECS / Docker / 微信支付商户号 | 🚧 待开始(法务先行) |

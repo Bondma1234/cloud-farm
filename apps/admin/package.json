@@ -10,14 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.10",
-    "vue-router": "^4.4.5",
-    "pinia": "^2.2.4",
-    "element-plus": "^2.8.4",
+    "@cloud-farm/api-client": "workspace:*",
+    "@cloud-farm/shared": "workspace:*",
     "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.7.7",
-    "@cloud-farm/shared": "workspace:*",
-    "@cloud-farm/api-client": "workspace:*"
+    "echarts": "^6.1.0",
+    "element-plus": "^2.8.4",
+    "pinia": "^2.2.4",
+    "vue": "^3.5.10",
+    "vue-echarts": "^8.0.1",
+    "vue-router": "^4.4.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
