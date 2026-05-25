@@ -22,6 +22,9 @@ export class UserPublicDto {
 
   @ApiProperty({ example: 'customer', enum: ['customer', 'agronomist', 'cs', 'operator', 'admin'] })
   role!: string;
+
+  @ApiProperty({ example: '2026-03-15T08:23:45.000Z', description: 'ISO 时间;前端算"种地第 N 天"用' })
+  createdAt!: string;
 }
 
 export class AddressDto {

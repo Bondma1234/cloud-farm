@@ -559,7 +559,9 @@ export const useAppStore = defineStore('app', {
           nickname: me.nickname,
           avatar: me.avatar,
           level: me.level,
-          phone: me.phone
+          phone: me.phone,
+          createdAt: me.createdAt,    // P8 视觉 A: home 页"第 N 天"用
+          role: me.role
         };
         this.isLoggedIn = true;
         this.isApiAuth = true;
@@ -577,7 +579,9 @@ export const useAppStore = defineStore('app', {
         nickname: data.user.nickname,
         avatar: data.user.avatar,
         level: data.user.level,
-        phone: phone.slice(0, 3) + '****' + phone.slice(7)
+        phone: phone.slice(0, 3) + '****' + phone.slice(7),
+        createdAt: data.user.createdAt,
+        role: data.user.role
       };
       this.isLoggedIn = true;
       this.isApiAuth = true;

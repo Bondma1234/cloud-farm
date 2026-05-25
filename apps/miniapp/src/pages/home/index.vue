@@ -4,17 +4,18 @@
     <view class="hero">
       <view class="hero-content">
         <text class="hello">你好，{{ user.nickname }} 👋</text>
-        <text class="sub">今天是你的田园第 49 天</text>
+        <text class="sub">{{ heroSub }}</text>
       </view>
       <view class="hero-card">
         <view class="stat">
-          <text class="stat-num">22°</text>
-          <text class="stat-label">河南·周口</text>
+          <text class="stat-num" v-if="plantedDays">第 {{ plantedDays }} 天</text>
+          <text class="stat-num" v-else>欢迎</text>
+          <text class="stat-label">{{ plantedDays ? joinedDate : '注册后开始种地' }}</text>
         </view>
         <view class="divider" />
         <view class="stat">
-          <text class="stat-num">多云</text>
-          <text class="stat-label">适宜生长</text>
+          <text class="stat-num">{{ season.icon }} {{ season.season }}</text>
+          <text class="stat-label">{{ season.tip }}</text>
         </view>
       </view>
     </view>
@@ -100,10 +101,11 @@
 
 <script setup>
 import Taro from '@tarojs/taro';
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
 import { usePackageStore } from '../../stores/packages';
+import { getCurrentSeason, getPlantedDays, formatJoinedDate } from '../../utils/season';
 
 const store = useAppStore();
 const { user } = storeToRefs(store);
@@ -116,11 +118,25 @@ const liveRooms = LIVE_ROOMS.filter(l => l.live);
 // home 页只显示最近 3 条，全部走 /pages/journal
 const feedPreview = JOURNAL_ENTRIES.slice(0, 3);
 
+// === P8 视觉 A:替换硬编码"第 49 天 / 河南·周口 22° 多云" ===
+const plantedDays = computed(() => getPlantedDays(user.value?.createdAt));
+const joinedDate = computed(() => formatJoinedDate(user.value?.createdAt));
+const season = computed(() => getCurrentSeason());
+const heroSub = computed(() => {
+  if (plantedDays.value) return `你的田园第 ${plantedDays.value} 天 · ${season.value.season}季种植`;
+  return `${season.value.season}季正适合种植 · 选块田一起开始`;
+});
+
 const go = url => Taro.navigateTo({ url }).catch(() => Taro.switchTab({ url }).catch(() => {}));
 const goDetail = id => Taro.navigateTo({ url: `/pages/package-detail/index?id=${id}` });
 const goLive = id => Taro.navigateTo({ url: `/pages/live/index?id=${id}` });
 
-onMounted(() => pkgStore.fetch());
+onMounted(async () => {
+  // 拉真套餐
+  pkgStore.fetch();
+  // 拉真用户 createdAt(没登录就静默跳过)
+  await store.bootstrap?.();
+});
 </script>
 
 <style lang="scss" scoped>

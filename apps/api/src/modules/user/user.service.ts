@@ -23,6 +23,7 @@ export class UserService {
       avatar: u.avatar,
       level: u.level,
       role: u.role,
+      createdAt: u.createdAt.toISOString(),
     };
   }
 

@@ -119,6 +119,9 @@ export interface User {
   phone: string;
   unionid?: string;
   openid?: string;
+  role?: 'customer' | 'agronomist' | 'cs' | 'operator' | 'admin';
+  /** ISO 时间, 前端用来算"种地第 N 天" */
+  createdAt?: string;
 }
 
 // ============ 摄像头 (P5 才用) ============

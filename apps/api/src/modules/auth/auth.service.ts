@@ -67,6 +67,7 @@ export class AuthService {
         avatar: user.avatar,
         level: user.level,
         role: user.role,
+        createdAt: user.createdAt.toISOString(),
       },
     };
   }

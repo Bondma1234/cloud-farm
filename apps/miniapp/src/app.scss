@@ -34,3 +34,54 @@ scroll-view[scroll-y] {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
+
+/* ========== P8 视觉 B: 全局点击反馈 ==========
+   原:用户点 .pkg-card / .quick-item / .act / .btn 等元素,iPhone 上完全没有"按了"的视觉反馈
+   现:统一加 :active 缩放(0.97x)+ opacity 微透,模拟 iOS 系统按钮的下沉触感
+   且关掉 iOS 默认的蓝色高亮,自己控制反馈
+
+   覆盖模式 + 精确兜底:
+     - [class$="-card"] / [class*="-card "] 等后缀通配
+     - 列出 home/login/profile/orders/my-plot/journal 高频出现但不带后缀的 class
+   兜底类:`.tappable` —— 新加交互元素可以直接挂这个 class */
+.tappable,
+[class$="-card"], [class*="-card "],
+[class$="-btn"],  [class*="-btn "],
+[class$="-item"], [class*="-item "],
+[class$="-cta"],  [class*="-cta "],
+.act, .h-stat, .quick-item, .pkg-card, .live-card, .feed-item,
+.add-btn, .cart-btn, .ctrl-btn, .empty-btn, .cta-btn, .btn-full, .post-btn,
+.f-item, .f-btn, .f-act, .stat-item,
+.bar-back, .bar-r, .sec-more, .info-copy, .agree, .link,
+.mini, .row, .close, .logout, .login-prompt, .setting, .save, .api-warn,
+.block-more, .card-act,
+.card, .other-i, .field-a {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.tappable:active,
+[class$="-card"]:active, [class*="-card "]:active,
+[class$="-btn"]:active,  [class*="-btn "]:active,
+[class$="-item"]:active, [class*="-item "]:active,
+[class$="-cta"]:active,  [class*="-cta "]:active,
+.act:active, .h-stat:active, .quick-item:active, .pkg-card:active,
+.live-card:active, .feed-item:active,
+.add-btn:active, .cart-btn:active, .ctrl-btn:active, .empty-btn:active,
+.cta-btn:active, .btn-full:active, .post-btn:active,
+.f-item:active, .f-btn:active, .f-act:active, .stat-item:active,
+.bar-back:active, .bar-r:active, .sec-more:active, .info-copy:active,
+.agree:active, .link:active,
+.mini:active, .row:active, .close:active, .logout:active,
+.login-prompt:active, .setting:active, .save:active,
+.block-more:active, .card-act:active,
+.card:active, .other-i:active, .field-a:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+/* 已禁用的元素不要反馈 */
+.dis:active, [disabled]:active {
+  transform: none !important;
+  opacity: 1 !important;
+}

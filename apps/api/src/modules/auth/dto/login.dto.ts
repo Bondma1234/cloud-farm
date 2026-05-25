@@ -37,5 +37,6 @@ export class LoginResultDto {
     avatar: string;
     level: string;
     role: string;
+    createdAt: string;       // ISO,前端用来算"种地第 N 天"
   };
 }
