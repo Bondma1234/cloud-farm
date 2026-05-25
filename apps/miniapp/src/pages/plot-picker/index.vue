@@ -156,7 +156,9 @@ onMounted(load);
 .footer {
   position: fixed; left: 0; right: 0; bottom: 0; background: #fff;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-  display: flex; padding: 10px 16px 22px; gap: 12px; align-items: center;
+  display: flex; padding: 10px 16px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0));
+  gap: 12px; align-items: center;
   z-index: 100;
 }
 .f-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }

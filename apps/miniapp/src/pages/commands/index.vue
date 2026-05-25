@@ -68,10 +68,8 @@
       </view>
     </view>
 
-    <view v-else class="empty">
-      <text class="empty-ic">📭</text>
-      <text>这个分类下还没有指令</text>
-    </view>
+    <EmptyState v-else type="cmd" title="这个分类下还没有指令" subtitle="去我的田发一条吧" />
+
 
     <!-- 底部 CTA -->
     <view class="cta">
@@ -88,6 +86,7 @@ import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAppStore } from '../../stores/mock';
 import { useCommandStore } from '../../stores/commands';
+import EmptyState from '../../components/EmptyState.vue';
 
 const appStore = useAppStore();
 const commandStore = useCommandStore();
@@ -210,7 +209,8 @@ const goPlot = () => Taro.switchTab({ url: '/pages/my-plot/index' });
 .empty-ic { font-size: 48px; opacity: 0.5; }
 
 .cta {
-  position: fixed; bottom: 16px; left: 16px; right: 16px; z-index: 9;
+  position: fixed; left: 16px; right: 16px; z-index: 9;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0));
 }
 .cta-btn {
   background: var(--color-primary); color: #fff;

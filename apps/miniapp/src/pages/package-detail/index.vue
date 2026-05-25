@@ -165,7 +165,9 @@ const contact = () => Taro.showToast({ title: '客服会话（mock）', icon: 'n
 .footer {
   position: fixed; left: 0; right: 0; bottom: 0;
   background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-  display: flex; padding: 8px 12px 20px; gap: 10px; align-items: center;
+  display: flex; padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+  gap: 10px; align-items: center;
   z-index: 100;
 }
 .f-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; }

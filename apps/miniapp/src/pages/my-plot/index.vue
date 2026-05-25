@@ -1,24 +1,17 @@
 <template>
   <view class="page">
     <!-- 空态: 未登录 / 未认养 -->
-    <view v-if="store.isEmpty" class="empty">
-      <view class="empty-ic">🌱</view>
-      <text class="empty-t">还没有种植中的地块</text>
-      <text class="empty-s">先去认养一块田吧</text>
+    <EmptyState v-if="store.isEmpty" type="plot" title="还没有种植中的地块" subtitle="先去认养一块田吧">
       <view class="empty-btn" @tap="goPackages">去认养</view>
-    </view>
+    </EmptyState>
 
     <!-- 加载态 -->
-    <view v-else-if="store.loading && !plot" class="loading">
-      <text>加载中…</text>
-    </view>
+    <Skeleton v-else-if="store.loading && !plot" type="card" :count="1" />
 
     <!-- 错误态 -->
-    <view v-else-if="store.error && !plot" class="empty">
-      <view class="empty-ic">⚠️</view>
-      <text class="empty-t">{{ store.error }}</text>
+    <EmptyState v-else-if="store.error && !plot" type="error" :title="store.error">
       <view class="empty-btn" @tap="retry">重试</view>
-    </view>
+    </EmptyState>
 
     <template v-else-if="plot">
       <!-- 顶部我的地块信息 -->
@@ -120,6 +113,8 @@ import { useMyPlotStore } from '../../stores/myPlot';
 import { useCommandStore } from '../../stores/commands';
 import { useAppStore, COMMANDS } from '../../stores/mock';
 import { createCommand, ApiError } from '@cloud-farm/api-client';
+import Skeleton from '../../components/Skeleton.vue';
+import EmptyState from '../../components/EmptyState.vue';
 
 const store = useMyPlotStore();
 const cmdStore = useCommandStore();

@@ -20,8 +20,11 @@
       </view>
     </view>
 
+    <!-- P8 视觉 D: 首次拉数据时骨架屏 -->
+    <Skeleton v-if="orderStore.loading && !orderStore.list.length" type="line" :count="4" />
+
     <!-- 订单列表 -->
-    <view class="list" v-if="filtered.length">
+    <view class="list" v-else-if="filtered.length">
       <view class="order" v-for="o in filtered" :key="o.id" @tap="toDetail(o)">
         <view class="order-h">
           <text class="order-type">{{ o.typeIcon }} {{ o.type }}</text>
@@ -90,12 +93,14 @@
     </view>
 
     <!-- 空态 -->
-    <view v-else class="empty">
-      <view class="empty-ic">📭</view>
-      <text class="empty-t">暂无{{ activeLabel }}订单</text>
-      <text class="empty-s">去挑一块心仪的田地吧～</text>
+    <EmptyState
+      v-else
+      type="order"
+      :title="`暂无${activeLabel}订单`"
+      subtitle="去挑一块心仪的田地吧～"
+    >
       <view class="empty-btn" @tap="goPackages">去认养</view>
-    </view>
+    </EmptyState>
   </view>
 </template>
 
@@ -105,6 +110,8 @@ import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAppStore } from '../../stores/mock';
 import { useOrderStore } from '../../stores/orders';
+import Skeleton from '../../components/Skeleton.vue';
+import EmptyState from '../../components/EmptyState.vue';
 
 const router = useRouter();
 const appStore = useAppStore();

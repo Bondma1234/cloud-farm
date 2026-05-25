@@ -192,7 +192,8 @@ const goPackages = () => Taro.navigateTo({ url: '/pages/packages/index' })
 .empty-ic { font-size: 48px; opacity: 0.5; }
 
 .cta {
-  position: fixed; bottom: 16px; left: 16px; right: 16px; z-index: 9;
+  position: fixed; left: 16px; right: 16px; z-index: 9;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0));
 }
 .cta-btn {
   background: var(--color-primary); color: #fff;

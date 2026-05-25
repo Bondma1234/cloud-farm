@@ -46,6 +46,9 @@
         <text class="sec-title">精选认养</text>
         <text class="sec-more" @tap="go('/pages/packages/index')">全部 ›</text>
       </view>
+      <!-- P8 视觉 D: 拉数据时骨架屏占位,不再白屏 -->
+      <Skeleton v-if="pkgStore.loading && !packages.length" type="card" :count="3" />
+      <view v-else class="h-scroll-wrap">
       <scroll-view scroll-x class="h-scroll">
         <view class="pkg-card" v-for="p in packages" :key="p.id" @tap="goDetail(p.id)">
           <image :src="p.cover" mode="aspectFill" class="pkg-cover" />
@@ -60,6 +63,7 @@
           </view>
         </view>
       </scroll-view>
+      </view>
     </view>
 
     <!-- 正在直播 -->
@@ -106,6 +110,7 @@ import { storeToRefs } from 'pinia';
 import { LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
 import { usePackageStore } from '../../stores/packages';
 import { getCurrentSeason, getPlantedDays, formatJoinedDate } from '../../utils/season';
+import Skeleton from '../../components/Skeleton.vue';
 
 const store = useAppStore();
 const { user } = storeToRefs(store);

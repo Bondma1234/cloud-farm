@@ -172,6 +172,22 @@ if (typeof window !== 'undefined') {
     scaleToFill: 'fill'
   }[mode] || 'cover');                      // 默认 aspectFill
 
+  // ============ P8 视觉 C: 图片 fallback 兜底 SVG ============
+  // <image @error> 会被 Taro 吞掉,我们在 patchImage 里直接挂 img.onerror。
+  // 失败时用渐变 + emoji 的 SVG dataURL 顶上,emoji 根据 src 关键词智能选:
+  //   url 含 pkg/package → 🌱  / crop → 🍅 / live → 📹 / ship/order → 📦 / 其他 → 🌾
+  const pickFallback = (src = '') => {
+    const s = src.toLowerCase();
+    let emoji = '🌾', c1 = '#4CA777', c2 = '#2E7D32';
+    if (s.includes('pkg') || s.includes('package')) { emoji = '🌱'; }
+    else if (s.includes('crop'))                      { emoji = '🍅'; c1 = '#E57373'; c2 = '#C0392B'; }
+    else if (s.includes('live'))                      { emoji = '📹'; }
+    else if (s.includes('ship') || s.includes('order')) { emoji = '📦'; c1 = '#A1887F'; c2 = '#5D4037'; }
+    else if (s.includes('snapshot') || s.includes('camera')) { emoji = '📸'; c1 = '#64B5F6'; c2 = '#1F5F9E'; }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><text x="200" y="180" text-anchor="middle" font-size="120" opacity="0.85">${emoji}</text></svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  };
+
   const patchImage = (el) => {
     if (el.tagName !== 'IMAGE' || el.__patched) return;
     el.__patched = true;
@@ -182,11 +198,22 @@ if (typeof window !== 'undefined') {
     el.style.position = 'relative';
     el.style.display = el.style.display || 'block';
     el.appendChild(img);
+    // P8 视觉 C: 加载失败时挂 fallback SVG(只兜底一次,避免循环 error)
+    img.addEventListener('error', () => {
+      if (img.__fellback) return;
+      img.__fellback = true;
+      img.src = pickFallback(img.dataset.origSrc || img.src);
+      img.style.objectFit = 'cover';
+    });
     // 同步 src/mode，并响应变化
     const sync = () => {
       const src = el.getAttribute('src') || '';
       const mode = el.getAttribute('mode') || 'aspectFill';
-      if (img.src !== src && src) img.src = src;
+      if (img.src !== src && src) {
+        img.__fellback = false;      // src 换了,重置 fallback 标志
+        img.dataset.origSrc = src;
+        img.src = src;
+      }
       img.style.objectFit = modeToFit(mode);
       const lazy = el.getAttribute('lazy-load');
       img.loading = (lazy === 'false' ? 'eager' : 'lazy');

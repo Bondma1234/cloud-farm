@@ -186,7 +186,7 @@ onMounted(async () => {
 .total { border-bottom: none; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--color-divider); }
 .val-total { color: var(--color-danger); font-size: 18px; font-weight: 700; }
 
-.footer { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; padding: 10px 16px 22px; gap: 12px; align-items: center; z-index: 100; }
+.footer { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0)); gap: 12px; align-items: center; z-index: 100; }
 .f-total { flex: 1; }
 .f-l { font-size: 11px; color: var(--color-text-mute); }
 .f-v { font-size: 22px; font-weight: 700; color: var(--color-danger); display: block; }

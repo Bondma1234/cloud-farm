@@ -139,7 +139,7 @@ const switchRoom = l => Taro.redirectTo({ url: `/pages/live/index?id=${l.id}` })
 .live-title { padding: 6px 8px 0; font-size: 12px; color: #fff; display: block; }
 .live-sub { padding: 2px 8px; font-size: 11px; color: #999; display: block; }
 
-.footer { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; padding: 10px 12px 20px; gap: 8px; align-items: center; z-index: 100; }
+.footer { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0)); gap: 8px; align-items: center; z-index: 100; }
 .f-input { flex: 1; background: rgba(255,255,255,0.12); color: #fff; padding: 10px 14px; border-radius: 999px; }
 .f-placeholder { color: #999; font-size: 13px; }
 .f-btn {

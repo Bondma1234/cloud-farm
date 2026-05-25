@@ -15,11 +15,10 @@
       </view>
     </view>
 
-    <view v-if="store.loading && !store.list.length" class="loading">
-      <text>加载中…</text>
-    </view>
+    <!-- P8 视觉 D: 骨架屏代替"加载中..."文字 -->
+    <Skeleton v-if="store.loading && !store.list.length" type="card" :count="3" />
 
-    <view class="list">
+    <view v-else class="list">
       <view class="card" v-for="p in filtered" :key="p.id" @tap="goDetail(p.id)">
         <image :src="p.cover" mode="aspectFill" class="cover" />
         <view class="tag">{{ p.tag }}</view>
@@ -56,6 +55,7 @@ import Taro from '@tarojs/taro';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePackageStore } from '../../stores/packages';
+import Skeleton from '../../components/Skeleton.vue';
 
 const store = usePackageStore();
 const { list } = storeToRefs(store);

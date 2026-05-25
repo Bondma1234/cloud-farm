@@ -85,3 +85,21 @@ scroll-view[scroll-y] {
   transform: none !important;
   opacity: 1 !important;
 }
+
+/* ========== P8 视觉 G: 横滑提示 ==========
+   横向 scroll-view 右侧加渐隐 mask, 暗示"还能往右滑"
+   .h-scroll-wrap 是父容器(需要业务方挂这个类),里面是 scroll-view 的滑动内容 */
+.h-scroll-wrap {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(245, 247, 246, 0) 0%, var(--color-bg) 100%);
+    z-index: 1;
+  }
+}
