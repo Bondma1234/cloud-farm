@@ -43,6 +43,21 @@ export const router = createRouter({
           component: () => import('@/views/Errors.vue'),
           meta: { title: '错误日志', requiresAuth: true },
         },
+        {
+          path: 'crops',
+          component: () => import('@/views/Crops.vue'),
+          meta: { title: '作物百科', requiresAuth: true },
+        },
+        {
+          path: 'journal',
+          component: () => import('@/views/Journal.vue'),
+          meta: { title: '田园动态', requiresAuth: true },
+        },
+        {
+          path: 'photos',
+          component: () => import('@/views/Photos.vue'),
+          meta: { title: '照片墙审核', requiresAuth: true },
+        },
       ],
     },
   ],

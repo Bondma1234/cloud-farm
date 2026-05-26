@@ -39,8 +39,9 @@
           <el-icon><Document /></el-icon>
           <span>内容管理</span>
         </template>
-        <el-menu-item disabled>田园动态 (P4+)</el-menu-item>
-        <el-menu-item disabled>作物百科 (P4+)</el-menu-item>
+        <el-menu-item index="/crops">作物百科</el-menu-item>
+        <el-menu-item index="/journal">田园动态</el-menu-item>
+        <el-menu-item index="/photos">照片墙审核</el-menu-item>
       </el-sub-menu>
       <el-menu-item disabled>
         <el-icon><Setting /></el-icon>

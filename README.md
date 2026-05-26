@@ -145,6 +145,9 @@ cloud-farm/
 | **Admin · User** | **GET / PATCH `:id/role` / PATCH `:id/status`**(改自己拒绝,不能禁其他 admin) | admin |
 | **Admin · Stats** | **GET `/admin/stats`** 聚合(totals/userByRole/订单&工单按状态/gmv30d 补 0 值/packageTop/cameraOnline) | admin·operator |
 | **ErrorLog** | **POST `/api/errors`**(匿名公开上报) + **GET `/admin/error-logs`** | 公开 / admin·operator |
+| **Admin · Crop** | Crop POST/PATCH/PATCH:status/DELETE(被订单引用时 409) | admin·operator (delete 仅 admin) |
+| **Admin · Journal** | POST `/admin/journal` 主动发布 + DELETE | admin·operator·agronomist |
+| **Admin · Photo** | GET `/admin/photos` 全状态 + PATCH :id/status + DELETE | admin·operator·cs |
 
 横切关注:全局 `ValidationPipe` + `TransformInterceptor`(统一 `{code,message,data}` 包装)+ `AllExceptionsFilter` + CORS + Swagger。
 

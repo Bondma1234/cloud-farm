@@ -487,6 +487,8 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **P5-mock 摄像头模块** | CameraModule + /users/me/plot + my-plot 走真接口(mock 地址) | ✅ 已完成 |
 | **★ P8 W1 指令/支付/上传** | Command 完整闭环 + 订单 mock 支付 + UploadModule + Admin /commands 页 + 性能优化(layout 抽离 + EP optimizeDeps) | ✅ 已完成 |
 | **★ P8 W2 工程质量** | Admin 用户管理 + 看板 ECharts + 后端 jest e2e + GitHub Actions CI + 轻量错误收集 | ✅ 已完成 |
+| **★ P8 视觉打磨 A-J** | home 动态化 + 点击反馈 + 字号 token + 安全区 + 图片 fallback + 骨架屏 + 空态插画 + 横滑提示 + Admin Header 品牌化 + Loading toast | ✅ 已完成 |
+| **★ A 运营空缺补完** | 套餐编辑接 upload + 作物 CRUD + 田园动态发布 + 照片墙审核(4 个 admin 新页) | ✅ 已完成 |
 | **P5 真萤石云接入** | CameraService 里把 mock 地址换成 EZOPEN OpenAPI 调用 | 待萤石账号 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | **P7 部署上云** | 域名 + ICP + ECS + Docker + 微信支付商户号 | 法务先行,暂搁置 |

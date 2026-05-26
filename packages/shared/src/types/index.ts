@@ -170,6 +170,8 @@ export interface Crop {
   intro: string;
   tags: string[];
   recommendPkg: string[];
+  status?: 'active' | 'archived';
+  sortOrder?: number;
 }
 
 // ============ Auth ============

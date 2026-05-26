@@ -40,15 +40,53 @@
           <el-option v-for="t in TAGS" :key="t" :value="t" :label="t" />
         </el-select>
       </el-form-item>
-      <el-form-item label="封面 URL" required>
-        <el-input v-model="form.cover" placeholder="/images/pkg-basic.jpg" />
+      <el-form-item label="封面" required>
+        <div class="upload-row">
+          <el-upload
+            :show-file-list="false"
+            :before-upload="coverBeforeUpload"
+            :http-request="uploadCover"
+            accept="image/*"
+          >
+            <el-button :loading="coverUploading" plain>
+              {{ coverUploading ? '上传中…' : '📤 上传封面' }}
+            </el-button>
+          </el-upload>
+          <el-image
+            v-if="form.cover"
+            :src="form.cover"
+            fit="cover"
+            style="width: 80px; height: 60px; border-radius: 6px; margin-left: 10px"
+          />
+        </div>
+        <el-input v-model="form.cover" size="small" placeholder="或直接粘贴 URL" style="margin-top: 6px" />
       </el-form-item>
       <el-form-item label="图集" required>
+        <div class="upload-row">
+          <el-upload
+            :show-file-list="false"
+            :before-upload="galleryBeforeUpload"
+            :http-request="uploadToGallery"
+            accept="image/*"
+            multiple
+          >
+            <el-button :loading="galleryUploading" plain>
+              {{ galleryUploading ? '上传中…' : '📤 追加图集图(可多选)' }}
+            </el-button>
+          </el-upload>
+        </div>
+        <div v-if="galleryUrls.length" class="gallery-list" style="margin-top: 8px">
+          <div v-for="(url, i) in galleryUrls" :key="i" class="gallery-thumb">
+            <el-image :src="url" fit="cover" style="width: 60px; height: 60px; border-radius: 6px" />
+            <el-button size="small" type="danger" link @click="removeGalleryAt(i)">删除</el-button>
+          </div>
+        </div>
         <el-input
           v-model="galleryText"
           type="textarea"
           :rows="2"
-          placeholder="多张图 URL,逗号或换行分隔"
+          placeholder="或直接粘贴多个 URL(逗号或换行分隔)"
+          style="margin-top: 6px"
         />
       </el-form-item>
       <el-form-item label="卖点" required>
@@ -87,6 +125,7 @@ import {
   ApiError,
 } from '@cloud-farm/api-client';
 import type { Package } from '@cloud-farm/shared';
+import { useUpload } from '@/composables/useUpload';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -115,6 +154,27 @@ const form = reactive({
 const galleryText = ref('');
 const highlightsText = ref('');
 const cropsText = ref('');
+
+// 图集的"已上传"列表(从 galleryText 解析 + 上传时追加)
+const galleryUrls = computed(() => parseList(galleryText.value));
+function removeGalleryAt(i: number) {
+  const list = parseList(galleryText.value);
+  list.splice(i, 1);
+  galleryText.value = list.join(',\n');
+}
+
+// 封面上传
+const { uploadOne: uploadCover, beforeUpload: coverBeforeUpload, uploading: coverUploading } = useUpload(
+  (url) => { form.cover = url; }
+);
+// 图集上传(追加到 galleryText)
+const { uploadOne: uploadToGallery, beforeUpload: galleryBeforeUpload, uploading: galleryUploading } = useUpload(
+  (url) => {
+    const list = parseList(galleryText.value);
+    list.push(url);
+    galleryText.value = list.join(',\n');
+  }
+);
 
 watch(
   () => [props.modelValue, props.package],
@@ -206,3 +266,21 @@ function onClose() {
   cropsText.value = '';
 }
 </script>
+
+<style scoped>
+.upload-row {
+  display: flex;
+  align-items: center;
+}
+.gallery-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.gallery-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+</style>
