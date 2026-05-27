@@ -10,7 +10,9 @@
       <admin-header :title="title" />
       <el-main>
         <router-view v-slot="{ Component }">
-          <component :is="Component" />
+          <transition name="cf-admin-page" mode="out-in">
+            <component :is="Component" />
+          </transition>
         </router-view>
       </el-main>
     </el-container>
@@ -30,5 +32,20 @@ const title = computed(() => (route.meta.title as string) || '运营后台');
 <style scoped>
 .root {
   height: 100vh;
+}
+</style>
+
+<!-- 非 scoped: transition 类名要全局可用 -->
+<style>
+.cf-admin-page-enter-active, .cf-admin-page-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.cf-admin-page-enter-from {
+  opacity: 0;
+  transform: translate3d(0, 6px, 0);
+}
+.cf-admin-page-leave-to {
+  opacity: 0;
+  transform: translate3d(0, -3px, 0);
 }
 </style>

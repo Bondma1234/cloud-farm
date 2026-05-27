@@ -537,6 +537,161 @@ async function main() {
   }
   console.log(`  ✓ ${commands.length} 指令工单`);
 
+  // ============ 10. P8 D4: 演示数据扩充 ============
+  // 生成"过去 N 天"日期的工具,种子跑哪天就以哪天为锚,demo 始终"最近"
+  const daysAgo = (n: number, hour = 10, minute = 0): Date => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    d.setHours(hour, minute, 0, 0);
+    return d;
+  };
+  const userId = user.id;
+
+  // 10.1 扩 12 个订单(覆盖 paid/growing/shipped/delivering/completed/cancelled 各种状态 + 价位)
+  const extraOrders = [
+    // 已完成 - 上个季节的收获
+    { id: 'ORD-EXT-001', type: '认养', typeIcon: '🌱', title: '基础版 · 10㎡(去年秋季)', cover: '/images/pkg-basic.jpg',  price: 499,  status: 'completed', statusLabel: '已完成',  daysOffset: 28, packageId: 'pkg-basic',  plotId: null, crops: ['红薯'] },
+    { id: 'ORD-EXT-002', type: '认养', typeIcon: '🌱', title: '亲子版 · 草莓种植季',     cover: '/images/pkg-family.jpg', price: 699,  status: 'completed', statusLabel: '已完成',  daysOffset: 25, packageId: 'pkg-family', plotId: null, crops: ['草莓'] },
+    // 种植中
+    { id: 'ORD-EXT-003', type: '认养', typeIcon: '🌱', title: '进阶版 · 番茄+草莓双拼', cover: '/images/pkg-pro.jpg',    price: 799,  status: 'growing',   statusLabel: '种植中',  daysOffset: 18, packageId: 'pkg-pro',    plotId: 'P-A-06', crops: ['小番茄', '草莓'] },
+    { id: 'ORD-EXT-004', type: '认养', typeIcon: '🌱', title: '基础版 · 蜜薯专属',       cover: '/images/pkg-basic.jpg',  price: 499,  status: 'growing',   statusLabel: '种植中',  daysOffset: 15, packageId: 'pkg-basic',  plotId: 'P-A-10', crops: ['蜜薯'] },
+    // 配送中 / 待发货 - 产地直送类
+    { id: 'ORD-EXT-005', type: '产地直送', typeIcon: '📦', title: '水果玉米 5 斤',          cover: '/images/crop-strawberry.jpg', price: 68,  status: 'delivering', statusLabel: '配送中', daysOffset: 3,  packageId: null, plotId: null, crops: [] },
+    { id: 'ORD-EXT-006', type: '产地直送', typeIcon: '📦', title: '贝贝南瓜 3 个',          cover: '/images/crop-pumpkin.jpg',   price: 89,  status: 'shipped',    statusLabel: '待发货', daysOffset: 2,  packageId: null, plotId: null, crops: [] },
+    { id: 'ORD-EXT-007', type: '产地直送', typeIcon: '📦', title: '蜜薯 · 周末家庭装',      cover: '/images/crop-sweetpotato.jpg', price: 129, status: 'delivering', statusLabel: '配送中', daysOffset: 5,  packageId: null, plotId: null, crops: [] },
+    { id: 'ORD-EXT-008', type: '产地直送', typeIcon: '📦', title: '香椿头茬 200g',          cover: '/images/farm-detail-2.jpg', price: 45,  status: 'completed',  statusLabel: '已完成', daysOffset: 20, packageId: null, plotId: null, crops: [] },
+    // 已付款 - 等分配
+    { id: 'ORD-EXT-009', type: '认养', typeIcon: '🌱', title: '进阶版 · 香椿+紫蒜',       cover: '/images/pkg-pro.jpg',    price: 799,  status: 'paid',      statusLabel: '已付款',  daysOffset: 1,  packageId: 'pkg-pro',    plotId: null, crops: ['香椿', '紫皮蒜'] },
+    // 待付款 - 刚下的
+    { id: 'ORD-EXT-010', type: '认养', typeIcon: '🌱', title: '亲子版 · 暑期亲子田',     cover: '/images/pkg-family.jpg', price: 699,  status: 'pending',   statusLabel: '待付款',  daysOffset: 0,  packageId: 'pkg-family', plotId: null, crops: ['小番茄', '胡萝卜'] },
+    // 取消的
+    { id: 'ORD-EXT-011', type: '产地直送', typeIcon: '📦', title: '冬笋 1 斤',              cover: '/images/farm-detail-3.jpg', price: 38,  status: 'cancelled', statusLabel: '已取消', daysOffset: 12, packageId: null, plotId: null, crops: [] },
+    { id: 'ORD-EXT-012', type: '认养', typeIcon: '🌱', title: '基础版 · 朋友礼物',       cover: '/images/pkg-basic.jpg',  price: 499,  status: 'cancelled', statusLabel: '已取消', daysOffset: 10, packageId: 'pkg-basic',  plotId: null, crops: ['土豆'] },
+  ] as const;
+
+  for (const o of extraOrders) {
+    const data = {
+      id: o.id,
+      userId,
+      type: o.type,
+      typeIcon: o.typeIcon,
+      title: o.title,
+      cover: o.cover,
+      price: o.price,
+      count: 1,
+      status: o.status,
+      statusLabel: o.statusLabel,
+      date: daysAgo(o.daysOffset),
+      packageId: o.packageId,
+      plotId: o.plotId,
+      addressId: 'addr-demo-1',
+      crops: JSON.stringify(o.crops),
+      metadata: JSON.stringify({}),
+    };
+    await prisma.order.upsert({ where: { id: o.id }, create: data, update: data });
+  }
+  console.log(`  ✓ ${extraOrders.length} 扩充订单(覆盖 paid/growing/shipped/delivering/completed/cancelled)`);
+
+  // 10.2 扩 14 条 journal(过去 30 天分布,题材丰富)
+  const extraJournal = [
+    { id: 'j-ext-01', type: 'water',     icon: '💧', title: '今晨给 A 区全部浇了水',      summary: '河南早上 18°,凉爽,适合浇水',     body: '今天天气好,趁着早上凉快给 A 区 12 块地都浇了次水。最近一直 20° 上下,作物长势喜人。', daysOffset: 1,  plotId: null },
+    { id: 'j-ext-02', type: 'bloom',     icon: '🌸', title: '4 号地块的胡萝卜开花了',     summary: '紫色小花,蜜蜂在采蜜',           body: '一早巡田,发现 P-A-04 的胡萝卜花开了一小片紫色,几只蜜蜂在采蜜,授粉好兆头。',          daysOffset: 2,  plotId: 'P-A-04' },
+    { id: 'j-ext-03', type: 'harvest',   icon: '🎉', title: '本季首批香椿头茬开采',        summary: '12 户用户先到先得',              body: '香椿头茬最嫩,这周开始采收,每户限量 200g 起。亲子版用户优先,扫码下单。',                daysOffset: 3,  plotId: 'P-A-04' },
+    { id: 'j-ext-04', type: 'pest',      icon: '🐛', title: '红颜草莓白粉病警报',         summary: '已喷小苏打水溶液应对',          body: '草莓棚里发现少量白粉病迹象,已用 1:300 小苏打水溶液喷洒,持续观察 3 天。',              daysOffset: 4,  plotId: 'P-A-12' },
+    { id: 'j-ext-05', type: 'fertilize', icon: '🌱', title: 'B 区有机豆饼肥补给',         summary: '全部用有机肥,无化肥',            body: '今天给 B 区追施了一批发酵好的豆饼有机肥,根部撒施 + 浅松土覆盖。',                       daysOffset: 6,  plotId: null },
+    { id: 'j-ext-06', type: 'shoot',     icon: '📸', title: '清晨 6 点的农场全景',         summary: '雾还没散,鸟叫得欢',              body: '今天起得早,拍了一张全景。雾气中能看到一垄垄整齐的菜地,远处是认养户的小立牌。',         daysOffset: 7,  plotId: null },
+    { id: 'j-ext-07', type: 'plant',     icon: '🌾', title: '新一季蜜薯下地完毕',         summary: '8 块地全部种好',                 body: '今天和老李一起把蜜薯苗种到 8 块地里,株距 35cm,约 90 天可收。',                          daysOffset: 9,  plotId: null },
+    { id: 'j-ext-08', type: 'water',     icon: '💧', title: '昨夜降雨 12mm 不用浇水',     summary: '感谢老天爷',                     body: '昨夜下了一场透雨,土壤湿度起飞,这两天免浇水。',                                          daysOffset: 11, plotId: null },
+    { id: 'j-ext-09', type: 'weed',      icon: '🌿', title: 'C 区杂草清理 + 松土',         summary: '半天搞定 6 块地',                 body: '今天清晨开始除草,半天清理了 C 区 6 块地的杂草,顺便松了一遍土。',                       daysOffset: 13, plotId: null },
+    { id: 'j-ext-10', type: 'harvest',   icon: '🎉', title: '上周收获 6 户用户已发货',     summary: '顺丰冷链次日达',                 body: '上周采收的 6 单蜜薯/水果玉米/草莓已全部打包,走顺丰冷链次日达。',                        daysOffset: 15, plotId: null },
+    { id: 'j-ext-11', type: 'bloom',     icon: '🌸', title: '南瓜花海延绵一片',           summary: '橙黄色像油画',                   body: '早上巡田,贝贝南瓜的橙黄色花开成片,简直像 monet 的油画。拍了几张全景。',                daysOffset: 18, plotId: null },
+    { id: 'j-ext-12', type: 'plant',     icon: '🌾', title: '春季补种向日葵围栏',         summary: '15 米一字排开',                   body: '在 D 区边界补种了一排向日葵当围栏,15 米长,主要是亲子版的孩子们指定要的。',             daysOffset: 22, plotId: null },
+    { id: 'j-ext-13', type: 'ship',      icon: '📦', title: '本周冷链发出 18 单',         summary: '河南→北京次日达 / 上海 2 日',  body: '本周一共打包发出 18 单产地直送,其中 12 单北京次日达,6 单上海/广州 2 日达。',           daysOffset: 25, plotId: null },
+    { id: 'j-ext-14', type: 'news',      icon: '📰', title: '新增"企业田"套餐预约通道', summary: '50㎡ 起,公司 logo 立牌',         body: '近期不少 HR 朋友咨询企业团建田,我们正式上线"企业田"50㎡ 起,价格 5000 元/年。',     daysOffset: 28, plotId: null },
+  ] as const;
+
+  for (const j of extraJournal) {
+    const data = {
+      id: j.id,
+      type: j.type,
+      icon: j.icon,
+      title: j.title,
+      summary: j.summary,
+      body: j.body,
+      photos: JSON.stringify([]),
+      by: '老张(驻场农技员)',
+      at: daysAgo(j.daysOffset, 8 + (j.daysOffset % 10), j.daysOffset % 60),
+      plotId: j.plotId,
+      likes: 10 + (j.daysOffset * 3) % 50,
+      comments: (j.daysOffset * 2) % 12,
+    };
+    await prisma.journalEntry.upsert({ where: { id: j.id }, create: data, update: data });
+  }
+  console.log(`  ✓ ${extraJournal.length} 扩充田园动态(过去 30 天分布)`);
+
+  // 10.3 扩 9 个 commands(覆盖 pending/executing/completed,不同 type)
+  const extraCommands = [
+    { id: 'c-ext-01', type: 'water',     icon: '💧', label: '浇水',  status: 'completed', statusLabel: '已完成', by: '老张',         note: '已浇水,土壤湿度回升',                photo: '/images/farm-detail-1.jpg', daysOffset: 1 },
+    { id: 'c-ext-02', type: 'fertilize', icon: '🌱', label: '施肥',  status: 'completed', statusLabel: '已完成', by: '小李',         note: '已追施有机肥',                       photo: '/images/farm-detail-3.jpg', daysOffset: 3 },
+    { id: 'c-ext-03', type: 'shoot',     icon: '📸', label: '拍张照', status: 'completed', statusLabel: '已完成', by: '摄像头(自动)', note: '自动抓拍 1 张',                       photo: '/images/farm-detail-2.jpg', daysOffset: 5 },
+    { id: 'c-ext-04', type: 'weed',      icon: '🌿', label: '除草',  status: 'completed', statusLabel: '已完成', by: '老张',         note: '清除了周边 50cm 杂草',                photo: null,                         daysOffset: 8 },
+    { id: 'c-ext-05', type: 'water',     icon: '💧', label: '浇水',  status: 'executing', statusLabel: '执行中', by: '农技员小李',    note: '准备傍晚浇水',                       photo: null,                         daysOffset: 0 },
+    { id: 'c-ext-06', type: 'shoot',     icon: '📸', label: '拍张照', status: 'pending',   statusLabel: '待执行', by: null,           note: '',                                   photo: null,                         daysOffset: 0 },
+    { id: 'c-ext-07', type: 'pest',      icon: '🐛', label: '捉虫',  status: 'completed', statusLabel: '已完成', by: '老张',         note: '发现 2 只青虫,已人工捕捉',           photo: null,                         daysOffset: 12 },
+    { id: 'c-ext-08', type: 'fertilize', icon: '🌱', label: '施肥',  status: 'completed', statusLabel: '已完成', by: '小李',         note: '复合肥少量补给',                     photo: null,                         daysOffset: 15 },
+    { id: 'c-ext-09', type: 'water',     icon: '💧', label: '浇水',  status: 'completed', statusLabel: '已完成', by: '老张',         note: '雨季前最后一次浇水',                 photo: null,                         daysOffset: 20 },
+  ] as const;
+
+  for (const c of extraCommands) {
+    const data = {
+      id: c.id,
+      userId,
+      type: c.type,
+      icon: c.icon,
+      label: c.label,
+      plotId: 'P-A-07',
+      requestedAt: daysAgo(c.daysOffset, 9 + c.daysOffset % 8),
+      completedAt: c.status === 'completed' ? daysAgo(c.daysOffset, 11 + c.daysOffset % 5) : null,
+      status: c.status,
+      statusLabel: c.statusLabel,
+      by: c.by,
+      note: c.note,
+      photo: c.photo,
+      cost: 0,
+    };
+    await prisma.command.upsert({ where: { id: c.id }, create: data, update: data });
+  }
+  console.log(`  ✓ ${extraCommands.length} 扩充指令工单`);
+
+  // 10.4 扩 8 张照片墙(过去 30 天分布,不同用户)
+  const extraPhotos = [
+    { id: 'pw-ext-01', userName: '小番茄妈妈', userIcon: '👩', photo: '/images/crop-tomato.jpg',      caption: '今天小番茄红了 3 颗,孩子说要等全红',  plotId: 'P-A-09', crop: '小番茄', daysOffset: 1 },
+    { id: 'pw-ext-02', userName: '北漂老王',   userIcon: '🧑', photo: '/images/farm-detail-1.jpg',    caption: '在公司大屏上看自己的田,治愈',          plotId: 'P-A-07', crop: '小番茄', daysOffset: 2 },
+    { id: 'pw-ext-03', userName: '阳光妈',     userIcon: '🤱', photo: '/images/crop-strawberry.jpg',  caption: '草莓季完美收官,做了 3 罐草莓酱',       plotId: 'P-A-12', crop: '草莓',   daysOffset: 4 },
+    { id: 'pw-ext-04', userName: '老饕',       userIcon: '🍴', photo: '/images/farm-detail-3.jpg',    caption: '香椿炒蛋,这味道城里买不到',            plotId: 'P-A-04', crop: '香椿',   daysOffset: 6 },
+    { id: 'pw-ext-05', userName: '田园爸',     userIcon: '👨', photo: '/images/farm-hero.jpg',        caption: '周末带娃来农场,他自己挑了一筐红薯',    plotId: 'P-C-02', crop: '蜜薯',   daysOffset: 9 },
+    { id: 'pw-ext-06', userName: '种菜小白',   userIcon: '🌱', photo: '/images/farm-field.jpg',       caption: '第一次种菜,什么都不会,但开心',         plotId: 'P-A-08', crop: '土豆',   daysOffset: 13 },
+    { id: 'pw-ext-07', userName: '南瓜爸爸',   userIcon: '👨', photo: '/images/crop-pumpkin.jpg',     caption: '贝贝南瓜熟了!板栗味十足',              plotId: 'P-B-03', crop: '贝贝南瓜', daysOffset: 17 },
+    { id: 'pw-ext-08', userName: '退休赵姨',   userIcon: '👵', photo: '/images/farm-detail-2.jpg',    caption: '退休生活有了寄托,每天看摄像头',         plotId: 'P-A-11', crop: '胡萝卜', daysOffset: 23 },
+  ] as const;
+
+  for (const p of extraPhotos) {
+    const data = {
+      id: p.id,
+      userName: p.userName,
+      userIcon: p.userIcon,
+      photo: p.photo,
+      caption: p.caption,
+      plotId: p.plotId,
+      crop: p.crop,
+      likes: 30 + (p.daysOffset * 7) % 150,
+      comments: 3 + (p.daysOffset * 2) % 20,
+      at: daysAgo(p.daysOffset, 10 + p.daysOffset % 12),
+    };
+    await prisma.photoPost.upsert({ where: { id: p.id }, create: data, update: data });
+  }
+  console.log(`  ✓ ${extraPhotos.length} 扩充照片墙`);
+
   console.log('🌾 seed 完成');
 }
 

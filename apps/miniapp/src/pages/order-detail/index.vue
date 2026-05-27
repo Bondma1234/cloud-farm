@@ -156,6 +156,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useAppStore } from '../../stores/mock';
 import { useOrderStore } from '../../stores/orders';
 import { cancelOrder as apiCancelOrder, ApiError } from '@cloud-farm/api-client';
+import { showSuccess } from '../../components/SuccessOverlay.vue';
 
 const router = useRouter();
 const store = useAppStore();
@@ -226,7 +227,13 @@ const payOrder = async () => {
     const updated = await orderStore.pay(order.value.id);
     order.value = updated;
     Taro.hideLoading();
-    Taro.showToast({ title: `支付成功 · ${updated.statusLabel}`, icon: 'success' });
+    // P8 D2: 支付成功反馈动画
+    showSuccess({
+      title: '支付成功',
+      subtitle: `状态变更:${updated.statusLabel}`,
+      emoji: updated.status === 'growing' ? '🌱' : '🎉',
+      duration: 1500,
+    });
   } catch (e) {
     Taro.hideLoading();
     const msg = e instanceof ApiError ? e.message : (e?.message || '支付失败');

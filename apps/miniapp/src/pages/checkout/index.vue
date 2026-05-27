@@ -77,6 +77,7 @@ import Taro, { useRouter } from '@tarojs/taro';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { createOrder, ApiError } from '@cloud-farm/api-client';
+import { showSuccess } from '../../components/SuccessOverlay.vue';
 import { usePackageStore } from '../../stores/packages';
 import { useAppStore, PACKAGES as MOCK_PACKAGES } from '../../stores/mock';
 
@@ -139,8 +140,14 @@ const pay = async () => {
       stake: stake.value,
     });
     Taro.hideLoading();
-    Taro.showToast({ title: `订单 ${order.id} 创建成功`, icon: 'success' });
-    setTimeout(() => Taro.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` }), 1200);
+    // P8 D2: 成功反馈动画取代 toast
+    await showSuccess({
+      title: '下单成功',
+      subtitle: `订单 ${order.id} · 立即去付款`,
+      emoji: '🎉',
+      duration: 1400,
+    });
+    Taro.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` });
   } catch (e) {
     Taro.hideLoading();
     const msg = e instanceof ApiError ? e.message : (e?.message || '下单失败');

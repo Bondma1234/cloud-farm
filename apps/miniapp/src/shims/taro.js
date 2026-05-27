@@ -113,14 +113,20 @@ const Taro = {
     if (el) { el.querySelector('.text').textContent = title; return; }
     el = document.createElement('div');
     el.id = '__loading';
-    el.innerHTML = `<span class="__cf-spinner" style="margin-right:10px"></span><span class="text">${title}</span>`;
+    el.innerHTML = `
+      <span class="__cf-spinner" style="margin-right:10px"></span>
+      <div style="display:flex;flex-direction:column">
+        <span class="text">${title}</span>
+        <span class="hint" style="font-size:11px;color:#999;margin-top:2px;opacity:0;transition:opacity .3s">请稍等…</span>
+      </div>
+    `;
     el.style.cssText = `
       position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
       background: #fff; color: #2E7D32;
       padding: 18px 24px; border-radius: 14px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(76,167,119,0.1);
       z-index: 9999; font-size: 14px; font-weight: 500;
-      display: flex; align-items: center; min-width: 140px;
+      display: flex; align-items: center; min-width: 160px;
     `;
     // 注入 keyframes(若 toast 没注入过)
     if (!document.getElementById('__cf_toast_kf')) {
@@ -131,16 +137,25 @@ const Taro = {
         .__cf-spinner {
           display: inline-block; width: 28px; height: 28px;
           border: 3px solid #E8F4EA; border-top-color: #4CA777;
-          border-radius: 50%; animation: cf-spin 0.8s linear infinite;
+          border-radius: 50%;
+          animation: cf-spin 0.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
       `;
       document.head.appendChild(style);
     }
     document.body.appendChild(el);
+    // > 800ms 还没消失,出"请稍等"副文,降低用户焦虑
+    el.__hintTimer = setTimeout(() => {
+      const hint = el.querySelector('.hint');
+      if (hint) hint.style.opacity = '1';
+    }, 800);
   },
   hideLoading: () => {
     const el = document.getElementById('__loading');
-    if (el) el.remove();
+    if (el) {
+      if (el.__hintTimer) clearTimeout(el.__hintTimer);
+      el.remove();
+    }
   },
   showModal: ({ title = '', content = '', success }) => {
     const ok = window.confirm(title + (content ? `\n\n${content}` : ''));

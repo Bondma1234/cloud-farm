@@ -1,4 +1,4 @@
-import { createApp, defineComponent, h } from 'vue';
+import { createApp, defineComponent, h, Transition } from 'vue';
 import { createPinia } from 'pinia';
 import { createRouter, createWebHashHistory, RouterView } from 'vue-router';
 import { setRouter } from './shims/taro.js';
@@ -140,13 +140,23 @@ const SiteFooter = defineComponent({
 });
 
 // ============ Site Shell（响应式容器） ============
+// P8 D5: 路由切换 fade 200ms,GPU 加速 (translateZ),不影响性能
 const SiteShell = defineComponent({
   render() {
     const isTab = TAB_PATHS.includes(this.$route.path);
+    // RouterView 渲染当前页;Transition 包一层做 fade
     return h('div', { class: 'site-shell' }, [
       h(SiteNav),
       h('main', { class: 'site-main' }, [
-        h('div', { class: 'site-content' }, [h(RouterView)]),
+        h('div', { class: 'site-content' }, [
+          h(RouterView, null, {
+            default: ({ Component }) => h(
+              Transition,
+              { name: 'cf-page', mode: 'out-in' },
+              { default: () => Component ? h(Component) : null }
+            )
+          })
+        ]),
         isTab ? h(TabBar) : null
       ]),
       h(SiteFooter)
