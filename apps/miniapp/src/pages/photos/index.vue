@@ -20,7 +20,7 @@
 
     <!-- 瀑布流模式 -->
     <view v-if="mode === 'grid'" class="grid">
-      <view class="g-card" v-for="p in photos" :key="p.id" @tap="openFeed(p)">
+      <view class="g-card card-enter" v-for="(p, idx) in photos" :key="p.id" :style="{ animationDelay: Math.min(idx, 10) * 50 + 'ms' }" @tap="openFeed(p)">
         <image :src="p.photo" mode="aspectFill" class="g-img" />
         <view class="g-overlay">
           <view class="g-avatar">{{ p.user.avatar }}</view>
@@ -99,6 +99,13 @@ const post = () => Taro.showToast({ title: '发图功能（待开放）', icon: 
 
 <style lang="scss" scoped>
 .page { padding-bottom: 32px; background: var(--color-surface-alt); min-height: 100vh; }
+
+/* U3b 卡片入场 stagger */
+.card-enter { opacity: 0; animation: card-in 0.4s ease-out forwards; }
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .head {
   background: linear-gradient(135deg, #4CA777 0%, #2E7D32 100%);

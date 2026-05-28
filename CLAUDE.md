@@ -490,7 +490,8 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **★ P8 视觉打磨 A-J** | home 动态化 + 点击反馈 + 字号 token + 安全区 + 图片 fallback + 骨架屏 + 空态插画 + 横滑提示 + Admin Header 品牌化 + Loading toast | ✅ 已完成 |
 | **★ A 运营空缺补完** | 套餐编辑接 upload + 作物 CRUD + 田园动态发布 + 照片墙审核(4 个 admin 新页) | ✅ 已完成 |
 | **★ D 细节深化** | TabBar 品牌化 + 成功反馈动画 + Loading 进度 + seed 扩充(20+订单/动态) + 路由 fade | ✅ 已完成 |
-| **★ B C 端二级页** | 优惠券(Coupon+UserCoupon)+ 邀请好友(inviteCode+发券)+ 设置页 + 帮助中心 + profile 接真数据 | ✅ 已完成 |
+| **★ B C 端二级页** | 优惠券(Coupon+UserCoupon)+ 邀请好友(inviteCode+发券)+ 设置页 + 帮助中心 + profile 接真数据 + checkout 选券抵扣 | ✅ 已完成 |
+| **★ U C 端 UI 进阶** | 首页 hero 重设计+我的田园数据卡 / 我的田进度环+生长阶段+日记时间线 / count-up+点赞弹跳+卡片 stagger+下拉刷新 | ✅ 已完成 |
 | **P5 真萤石云接入** | CameraService 里把 mock 地址换成 EZOPEN OpenAPI 调用 | 待萤石账号 |
 | **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
 | **P7 部署上云** | 域名 + ICP + ECS + Docker + 微信支付商户号 | 法务先行,暂搁置 |

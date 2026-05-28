@@ -1,9 +1,14 @@
 <template>
   <view class="page">
-    <!-- 顶部问候 -->
+    <!-- 顶部问候(U1a 重设计:装饰背景 + 层次) -->
     <view class="hero">
+      <!-- 装饰元素:漂浮的叶子 / 太阳 / 云 -->
+      <view class="deco deco-sun" />
+      <view class="deco deco-leaf1">🌿</view>
+      <view class="deco deco-leaf2">🍃</view>
+      <view class="deco deco-cloud">☁️</view>
       <view class="hero-content">
-        <text class="hello">你好，{{ user.nickname }} 👋</text>
+        <text class="hello">你好,{{ user.nickname }} 👋</text>
         <text class="sub">{{ heroSub }}</text>
       </view>
       <view class="hero-card">
@@ -37,6 +42,29 @@
       <view class="quick-item" @tap="go('/pages/profile/index')">
         <text class="ico">🛒</text>
         <text>农产品</text>
+      </view>
+    </view>
+
+    <!-- U1b: 我的田园数据卡(登录后显示) -->
+    <view v-if="isLoggedIn" class="mygarden" @tap="go('/pages/my-plot/index')">
+      <view class="mg-bg" />
+      <view class="mg-head">
+        <text class="mg-t">🌾 我的田园</text>
+        <text class="mg-more">进我的田 ›</text>
+      </view>
+      <view class="mg-stats">
+        <view class="mg-stat">
+          <text class="mg-n">{{ growingDisplay }}</text>
+          <text class="mg-l">认养中</text>
+        </view>
+        <view class="mg-stat">
+          <text class="mg-n">{{ daysDisplay }}</text>
+          <text class="mg-l">种植天数</text>
+        </view>
+        <view class="mg-stat">
+          <text class="mg-n">{{ orderDisplay }}</text>
+          <text class="mg-l">总订单</text>
+        </view>
       </view>
     </view>
 
@@ -109,15 +137,22 @@ import { computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
 import { usePackageStore } from '../../stores/packages';
+import { useOrderStore } from '../../stores/orders';
 import { getCurrentSeason, getPlantedDays, formatJoinedDate } from '../../utils/season';
+import { useCountUp } from '../../utils/useCountUp';
 import Skeleton from '../../components/Skeleton.vue';
 
 const store = useAppStore();
-const { user } = storeToRefs(store);
+const { user, isLoggedIn } = storeToRefs(store);
 
 // P4: 套餐走 store(后端真 API + mock 兜底), 不再直接 import PACKAGES
 const pkgStore = usePackageStore();
 const { list: packages } = storeToRefs(pkgStore);
+
+// U1b: 我的田园数据卡
+const orderStore = useOrderStore();
+const orderCount = computed(() => orderStore.list.length);
+const growingCount = computed(() => orderStore.list.filter(o => o.status === 'growing').length);
 
 const liveRooms = LIVE_ROOMS.filter(l => l.live);
 // home 页只显示最近 3 条，全部走 /pages/journal
@@ -132,6 +167,11 @@ const heroSub = computed(() => {
   return `${season.value.season}季正适合种植 · 选块田一起开始`;
 });
 
+// U3a: count-up 滚动(放在 plantedDays 之后,避免 TDZ)
+const growingDisplay = useCountUp(() => growingCount.value);
+const orderDisplay = useCountUp(() => orderCount.value);
+const daysDisplay = useCountUp(() => plantedDays.value || 0);
+
 const go = url => Taro.navigateTo({ url }).catch(() => Taro.switchTab({ url }).catch(() => {}));
 const goDetail = id => Taro.navigateTo({ url: `/pages/package-detail/index?id=${id}` });
 const goLive = id => Taro.navigateTo({ url: `/pages/live/index?id=${id}` });
@@ -141,6 +181,8 @@ onMounted(async () => {
   pkgStore.fetch();
   // 拉真用户 createdAt(没登录就静默跳过)
   await store.bootstrap?.();
+  // 登录了就拉订单(给"我的田园"数据卡)
+  if (store.isLoggedIn) orderStore.fetch();
 });
 </script>
 
@@ -148,16 +190,38 @@ onMounted(async () => {
 .page { padding-bottom: 32px; }
 
 .hero {
-  background: linear-gradient(135deg, #4CA777 0%, #2E7D32 100%);
-  padding: 24px 20px 56px;
+  background: linear-gradient(135deg, #56B383 0%, #4CA777 45%, #2E7D32 100%);
+  padding: 28px 20px 56px;
   color: #fff;
   position: relative;
+  overflow: hidden;
 }
-.hero-content { display: flex; flex-direction: column; gap: 4px; }
-.hello { font-size: 22px; font-weight: 600; }
-.sub { font-size: 14px; opacity: 0.88; }
+/* 径向高光,增加层次 */
+.hero::before {
+  content: '';
+  position: absolute; top: -40%; right: -20%;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 70%);
+  pointer-events: none;
+}
+/* 装饰 */
+.deco { position: absolute; pointer-events: none; user-select: none; }
+.deco-sun {
+  top: -30px; right: -30px; width: 110px; height: 110px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,185,66,0.5) 0%, rgba(244,185,66,0) 70%);
+}
+.deco-leaf1 { top: 14px; right: 18px; font-size: 26px; opacity: 0.5; animation: float1 5s ease-in-out infinite; }
+.deco-leaf2 { top: 54px; right: 64px; font-size: 18px; opacity: 0.4; animation: float2 6s ease-in-out infinite; }
+.deco-cloud { top: 22px; right: 110px; font-size: 22px; opacity: 0.35; animation: drift 8s ease-in-out infinite; }
+@keyframes float1 { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-8px) rotate(8deg); } }
+@keyframes float2 { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(6px) rotate(-6deg); } }
+@keyframes drift  { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
+
+.hero-content { display: flex; flex-direction: column; gap: 5px; position: relative; z-index: 1; }
+.hello { font-size: 23px; font-weight: 700; letter-spacing: 0.5px; text-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.sub { font-size: 14px; opacity: 0.92; }
 .hero-card {
-  position: absolute; left: 20px; right: 20px; bottom: -32px;
+  position: absolute; left: 20px; right: 20px; bottom: -32px; z-index: 2;
   background: #fff; border-radius: 16px; box-shadow: var(--shadow-md);
   display: flex; padding: 16px; gap: 8px;
 }
@@ -182,6 +246,27 @@ onMounted(async () => {
   display: flex; align-items: center; justify-content: center;
   font-size: 24px;
 }
+
+/* U1b: 我的田园数据卡 */
+.mygarden {
+  margin: 16px 16px 0; border-radius: 16px; padding: 16px 18px;
+  background: linear-gradient(120deg, #2E7D32 0%, #4CA777 100%);
+  color: #fff; position: relative; overflow: hidden;
+  box-shadow: 0 6px 18px rgba(46,125,50,0.25);
+}
+.mg-bg {
+  position: absolute; right: -30px; bottom: -40px;
+  width: 140px; height: 140px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 70%);
+  pointer-events: none;
+}
+.mg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; position: relative; z-index: 1; }
+.mg-t { font-size: 16px; font-weight: 700; }
+.mg-more { font-size: 12px; opacity: 0.85; }
+.mg-stats { display: flex; position: relative; z-index: 1; }
+.mg-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.mg-n { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mg-l { font-size: 11px; opacity: 0.85; }
 
 .section { margin: 20px 16px 0; }
 .sec-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }

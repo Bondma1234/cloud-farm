@@ -19,9 +19,15 @@
       </view>
     </scroll-view>
 
-    <!-- 列表 -->
-    <view class="list" v-if="filtered.length">
-      <view class="card" v-for="e in filtered" :key="e.id">
+    <!-- 列表(U3c 下拉刷新) -->
+    <PullRefresh v-if="filtered.length" @refresh="onRefresh">
+      <view class="list">
+      <view
+        class="card card-enter"
+        v-for="(e, idx) in filtered"
+        :key="e.id"
+        :style="{ animationDelay: Math.min(idx, 8) * 60 + 'ms' }"
+      >
         <view class="card-h">
           <view class="card-ic">{{ e.icon }}</view>
           <view class="card-meta">
@@ -45,9 +51,9 @@
         </view>
 
         <view class="card-f">
-          <view class="card-act" @tap="like(e)">
-            <text>👍</text>
-            <text class="act-n">{{ e.likes }}</text>
+          <view :class="['card-act', isLiked(e.id) && 'liked']" @tap="like(e)">
+            <text :class="['like-ic', bouncing === e.id && 'bounce']">{{ isLiked(e.id) ? '❤️' : '🤍' }}</text>
+            <text class="act-n">{{ likeCount(e) }}</text>
           </view>
           <view class="card-act" @tap="comment(e)">
             <text>💬</text>
@@ -59,7 +65,8 @@
           </view>
         </view>
       </view>
-    </view>
+      </view>
+    </PullRefresh>
 
     <view v-else class="empty">
       <text class="empty-ic">📭</text>
@@ -75,11 +82,17 @@ import Taro from '@tarojs/taro';
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useJournalStore } from '../../stores/journal';
+import PullRefresh from '../../components/PullRefresh.vue';
 
 const journalStore = useJournalStore();
 const { list: entries } = storeToRefs(journalStore);
 
 onMounted(() => journalStore.fetch());
+
+// U3c: 下拉刷新
+const onRefresh = (done) => {
+  journalStore.fetch({ force: true }).finally(done);
+};
 
 const TYPES = [
   { key: 'all',       icon: '📋', label: '全部' },
@@ -102,7 +115,21 @@ const preview = (urls, current) => {
     : Taro.showToast({ title: '查看大图（mock）', icon: 'none' });
 };
 
-const like = (e) => Taro.showToast({ title: `已点赞 +1`, icon: 'success' });
+// U3b: 点赞本地态 + 弹跳
+const likedIds = ref(new Set());
+const bouncing = ref(null);
+const isLiked = (id) => likedIds.value.has(id);
+const likeCount = (e) => (e.likes || 0) + (likedIds.value.has(e.id) ? 1 : 0);
+const like = (e) => {
+  const next = new Set(likedIds.value);
+  if (next.has(e.id)) next.delete(e.id);
+  else {
+    next.add(e.id);
+    bouncing.value = e.id;
+    setTimeout(() => { bouncing.value = null; }, 500);
+  }
+  likedIds.value = next;
+};
 const comment = (e) => Taro.showToast({ title: '评论功能（待开放）', icon: 'none' });
 const share = (e) => Taro.showToast({ title: '分享卡片（待开放）', icon: 'none' });
 </script>
@@ -139,6 +166,25 @@ const share = (e) => Taro.showToast({ title: '分享卡片（待开放）', icon
   background: #fff; border-radius: 14px; padding: 14px;
   box-shadow: var(--shadow-sm);
 }
+/* U3b 卡片入场 stagger */
+.card-enter {
+  opacity: 0;
+  animation: card-in 0.4s ease-out forwards;
+}
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* U3b 点赞弹跳 */
+.like-ic { display: inline-block; transition: transform 0.15s; }
+.like-ic.bounce { animation: like-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes like-bounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.5) rotate(-12deg); }
+  60% { transform: scale(0.9) rotate(6deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.card-act.liked .act-n { color: var(--color-danger); font-weight: 600; }
 .card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .card-ic {
   width: 40px; height: 40px; border-radius: 50%;
