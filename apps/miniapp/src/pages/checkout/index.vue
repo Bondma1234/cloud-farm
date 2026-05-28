@@ -46,17 +46,23 @@
     <view class="card">
       <view class="row"><text class="lab">立牌名字（可选）</text><text class="val">{{ stake || '点击填写' }}</text></view>
       <view class="row"><text class="lab">配送时段</text><text class="val">成熟后 48 小时内</text></view>
-      <view class="row"><text class="lab">优惠券</text><text class="val">抵扣 ¥50</text></view>
+      <view class="row tappable" @tap="openCoupon">
+        <text class="lab">优惠券</text>
+        <text :class="['val', pickedCoupon ? 'val-dis' : '']">
+          {{ pickedCoupon ? `${pickedCoupon.name} -¥${pickedCoupon.amount}` : (usableCoupons.length ? `${usableCoupons.length} 张可用` : '暂无可用') }}
+          ›
+        </text>
+      </view>
       <view class="row"><text class="lab">备注</text><text class="val">无</text></view>
     </view>
 
     <view class="card">
       <view class="row"><text class="lab">套餐费用</text><text class="val">¥ {{ pkg.price }}</text></view>
       <view class="row"><text class="lab">运费</text><text class="val">包邮</text></view>
-      <view class="row"><text class="lab">优惠</text><text class="val-dis">- ¥ 50</text></view>
+      <view class="row"><text class="lab">优惠</text><text class="val-dis">- ¥ {{ discount }}</text></view>
       <view class="row total">
         <text class="lab">应付</text>
-        <text class="val-total">¥ {{ pkg.price - 50 }}</text>
+        <text class="val-total">¥ {{ finalPrice }}</text>
       </view>
     </view>
 
@@ -65,9 +71,42 @@
     <view class="footer">
       <view class="f-total">
         <text class="f-l">实付</text>
-        <text class="f-v">¥ {{ pkg.price - 50 }}</text>
+        <text class="f-v">¥ {{ finalPrice }}</text>
       </view>
       <view class="f-btn" @tap="pay">提交订单</view>
+    </view>
+
+    <!-- 优惠券选择 sheet -->
+    <view v-if="couponSheet" class="mask" @tap="couponSheet = false">
+      <view class="sheet" @tap.stop>
+        <view class="sheet-h">
+          <text class="sheet-t">选择优惠券</text>
+          <text class="sheet-x" @tap="couponSheet = false">×</text>
+        </view>
+        <view class="sheet-body">
+          <view class="cp-opt" :class="{ on: !pickedCouponId }" @tap="selectCoupon(null)">
+            <text>不使用优惠券</text>
+            <text v-if="!pickedCouponId" class="cp-check">✓</text>
+          </view>
+          <view
+            v-for="c in usableCoupons"
+            :key="c.id"
+            class="cp-opt"
+            :class="{ on: pickedCouponId === c.id }"
+            @tap="selectCoupon(c.id)"
+          >
+            <view class="cp-l">
+              <text class="cp-amt">¥{{ c.amount }}</text>
+            </view>
+            <view class="cp-m">
+              <text class="cp-n">{{ c.name }}</text>
+              <text class="cp-d">{{ c.thresholdLabel }} · 至 {{ c.expireAt }}</text>
+            </view>
+            <text v-if="pickedCouponId === c.id" class="cp-check">✓</text>
+          </view>
+          <view v-if="!usableCoupons.length" class="cp-empty">没有满足条件的优惠券</view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -76,7 +115,7 @@
 import Taro, { useRouter } from '@tarojs/taro';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { createOrder, ApiError } from '@cloud-farm/api-client';
+import { createOrder, listMyCoupons, ApiError } from '@cloud-farm/api-client';
 import { showSuccess } from '../../components/SuccessOverlay.vue';
 import { usePackageStore } from '../../stores/packages';
 import { useAppStore, PACKAGES as MOCK_PACKAGES } from '../../stores/mock';
@@ -93,6 +132,25 @@ const pkg = computed(() => {
 const plot = ref(router.params.plot || 'P-A-07');
 const stake = ref('小祎的菜园');
 const pickedCrops = ref(['小番茄']);
+
+// P8 B: 优惠券
+const allCoupons = ref([]);
+const pickedCouponId = ref(null);
+const couponSheet = ref(false);
+
+// 适用的券:未使用 + 非商城专用 + 满门槛(基于套餐价)
+const usableCoupons = computed(() => {
+  const price = pkg.value?.price || 0;
+  return allCoupons.value.filter(c =>
+    c.status === 'unused' && c.scope !== 'shop' && price >= c.threshold
+  );
+});
+const pickedCoupon = computed(() => usableCoupons.value.find(c => c.id === pickedCouponId.value) || null);
+const discount = computed(() => pickedCoupon.value?.amount || 0);
+const finalPrice = computed(() => Math.max(0, (pkg.value?.price || 0) - discount.value));
+
+const openCoupon = () => { couponSheet.value = true; };
+const selectCoupon = (id) => { pickedCouponId.value = id; couponSheet.value = false; };
 
 // 收货地址:取默认地址,没有就第 1 条
 const address = computed(() => {
@@ -138,12 +196,13 @@ const pay = async () => {
       crops: pickedCrops.value,
       addressId: address.value.id,
       stake: stake.value,
+      couponId: pickedCouponId.value || undefined,
     });
     Taro.hideLoading();
     // P8 D2: 成功反馈动画取代 toast
     await showSuccess({
       title: '下单成功',
-      subtitle: `订单 ${order.id} · 立即去付款`,
+      subtitle: `实付 ¥${order.price}${discount.value ? ` · 已抵扣 ¥${discount.value}` : ''}`,
       emoji: '🎉',
       duration: 1400,
     });
@@ -160,6 +219,14 @@ onMounted(async () => {
     pkgStore.fetch(),
     appStore.bootstrap().then(() => appStore.fetchAddresses()),
   ]);
+  // 拉优惠券,自动默认选中"金额最大的可用券"
+  try {
+    allCoupons.value = await listMyCoupons();
+    if (usableCoupons.value.length) {
+      const best = [...usableCoupons.value].sort((a, b) => b.amount - a.amount)[0];
+      pickedCouponId.value = best.id;
+    }
+  } catch { /* 没登录或失败 → 不用券 */ }
 });
 </script>
 
@@ -198,4 +265,27 @@ onMounted(async () => {
 .f-l { font-size: 11px; color: var(--color-text-mute); }
 .f-v { font-size: 22px; font-weight: 700; color: var(--color-danger); display: block; }
 .f-btn { background: var(--color-primary); color: #fff; padding: 14px 32px; border-radius: 999px; font-weight: 600; font-size: 15px; }
+
+/* 优惠券选择 sheet */
+.mask { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: flex-end; }
+.sheet { width: 100%; background: var(--color-bg); border-radius: 16px 16px 0 0; max-height: 70vh; display: flex; flex-direction: column; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0)); }
+.sheet-h { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--color-divider); }
+.sheet-t { font-size: 16px; font-weight: 600; }
+.sheet-x { font-size: 24px; color: var(--color-text-mute); width: 28px; text-align: center; }
+.sheet-body { overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+.cp-opt {
+  display: flex; align-items: center; gap: 12px; background: #fff;
+  border-radius: 10px; padding: 14px; border: 2px solid transparent;
+}
+.cp-opt.on { border-color: var(--color-primary); }
+.cp-l {
+  background: linear-gradient(135deg, #4CA777, #2E7D32); color: #fff;
+  border-radius: 8px; padding: 8px 12px; flex-shrink: 0;
+}
+.cp-amt { font-size: 18px; font-weight: 800; }
+.cp-m { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cp-n { font-size: 14px; font-weight: 600; }
+.cp-d { font-size: 11px; color: var(--color-text-mute); }
+.cp-check { color: var(--color-primary); font-size: 18px; font-weight: 700; }
+.cp-empty { text-align: center; color: var(--color-text-mute); font-size: 13px; padding: 24px 0; }
 </style>

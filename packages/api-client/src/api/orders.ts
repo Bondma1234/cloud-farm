@@ -20,6 +20,7 @@ export interface CreateOrderInput {
   crops: string[];
   addressId: string;
   stake?: string;
+  couponId?: string;   // P8 B: 使用的优惠券(UserCoupon.id)
 }
 
 /** 创建订单(自动锁地块,30 分钟内未付款由 P5+ 定时任务释放) */

@@ -43,4 +43,9 @@ export class CreateOrderDto {
   @IsString()
   @Length(0, 20)
   stake?: string;
+
+  @ApiProperty({ required: false, example: 'uc-demo-1', description: '使用的优惠券(UserCoupon.id),不传=不用券' })
+  @IsOptional()
+  @IsString()
+  couponId?: string;
 }

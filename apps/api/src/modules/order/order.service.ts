@@ -76,6 +76,36 @@ export class OrderService {
       const minutes = Math.floor((expireAt.getTime() - Date.now()) / 60_000);
       const expireIn = `${String(minutes).padStart(2, '0')}:00`;
 
+      // 6.5 P8 B: 优惠券抵扣(可选)
+      const originalPrice = pkg.price;
+      let finalPrice = originalPrice;
+      let discountMeta: { couponName: string; amount: number; originalPrice: number } | null = null;
+      if (dto.couponId) {
+        const uc = await tx.userCoupon.findFirst({
+          where: { id: dto.couponId, userId },
+          include: { coupon: true },
+        });
+        if (!uc) throw new BadRequestException('优惠券不存在或不属于你');
+        if (uc.status !== 'unused') throw new BadRequestException('优惠券已使用或已过期');
+        if (uc.expireAt < today) throw new BadRequestException('优惠券已过期');
+        // 适用范围:all 全场;adopt 仅认养(本接口都是认养单)
+        if (uc.coupon.scope === 'shop') {
+          throw new BadRequestException('该券仅限商城使用,认养订单不可用');
+        }
+        // 门槛
+        if (originalPrice < uc.coupon.threshold) {
+          throw new BadRequestException(`未满 ${uc.coupon.threshold} 元,该券不可用`);
+        }
+        finalPrice = Math.max(0, originalPrice - uc.coupon.amount);
+        discountMeta = { couponName: uc.coupon.name, amount: uc.coupon.amount, originalPrice };
+        // 标记券已用
+        await tx.userCoupon.update({
+          where: { id: uc.id },
+          data: { status: 'used', usedAt: today, usedOrderId: orderId },
+        });
+        subItems.push({ label: '优惠券', value: `${uc.coupon.name} -¥${uc.coupon.amount}` });
+      }
+
       // 7. 创建订单
       const titlePrefix = dto.stake || pkg.name;
       const order = await tx.order.create({
@@ -86,7 +116,7 @@ export class OrderService {
           typeIcon: '🌱',
           title: `${titlePrefix}(${pkg.name})`,
           cover: pkg.cover,
-          price: pkg.price,
+          price: finalPrice,       // 实付价(已抵扣)
           count: 1,
           status: 'pending',
           statusLabel: '待付款',
@@ -96,7 +126,7 @@ export class OrderService {
           addressId: addr.id,
           crops: JSON.stringify(dto.crops),
           stake: dto.stake ?? null,
-          metadata: JSON.stringify({ subItems, expireIn }),
+          metadata: JSON.stringify({ subItems, expireIn, discount: discountMeta }),
         },
       });
 
