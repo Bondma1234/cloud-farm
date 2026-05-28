@@ -15,6 +15,8 @@ import { AdminModule } from './modules/admin/admin.module';
 import { CameraModule } from './modules/camera/camera.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { ErrorLogModule } from './modules/error-log/error-log.module';
+import { CouponModule } from './modules/coupon/coupon.module';
+import { InviteModule } from './modules/invite/invite.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { ErrorLogModule } from './modules/error-log/error-log.module';
     CameraModule,
     UploadModule,
     ErrorLogModule,
+    CouponModule,
+    InviteModule,
   ],
   controllers: [HealthController],
   providers: [],

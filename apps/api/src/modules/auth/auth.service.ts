@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { JwtPayload } from '../../common/auth/jwt-payload';
 import { LoginDto, LoginResultDto } from './dto/login.dto';
+import { InviteService } from '../invite/invite.module';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +12,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly invite: InviteService,
   ) {}
 
   /**
@@ -23,6 +25,10 @@ export class AuthService {
     if (!this.verifyCode(dto.phone, dto.code)) {
       throw new UnauthorizedException('验证码错误');
     }
+
+    // 是否首次注册(决定要不要走邀请发券)
+    const existing = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
+    const isNewUser = !existing;
 
     // 自动注册:第一次登录的手机号直接创建账号
     const user = await this.prisma.user.upsert({
@@ -40,6 +46,15 @@ export class AuthService {
     // P8 W2: 软禁用账号不能登录(被 admin disable 过的)。token 已发出的 15min 内仍有效。
     if (!user.active) {
       throw new UnauthorizedException('账号已被禁用,请联系管理员');
+    }
+
+    // P8 B: 新用户带邀请码注册 → 绑定邀请关系 + 双方发券(失败不阻断登录)
+    if (isNewUser && dto.inviteCode) {
+      try {
+        await this.invite.bindInviteOnSignup(user.id, dto.inviteCode);
+      } catch {
+        /* 发券失败不影响登录 */
+      }
     }
 
     const payload: JwtPayload = {

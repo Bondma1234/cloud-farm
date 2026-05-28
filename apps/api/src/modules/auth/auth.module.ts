@@ -5,10 +5,12 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from '../../common/auth/jwt.strategy';
+import { InviteModule } from '../invite/invite.module';
 
 @Module({
   imports: [
     PassportModule,
+    InviteModule, // 注册带邀请码时发券
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

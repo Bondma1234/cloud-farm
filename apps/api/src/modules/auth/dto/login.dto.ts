@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Matches, Length } from 'class-validator';
+import { IsString, Matches, Length, IsOptional } from 'class-validator';
 
 /**
  * 短信验证码登录入参
@@ -17,6 +17,11 @@ export class LoginDto {
   @IsString()
   @Length(6, 6, { message: '验证码必须是 6 位' })
   code!: string;
+
+  @ApiProperty({ required: false, example: 'CF8K2M9X', description: '邀请码(新用户首次注册时带,双方各得券)' })
+  @IsOptional()
+  @IsString()
+  inviteCode?: string;
 }
 
 /**

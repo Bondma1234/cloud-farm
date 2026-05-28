@@ -17,7 +17,7 @@
         <text class="user-n">{{ user.nickname }}</text>
         <view class="user-l">
           <view class="level">{{ user.level }}</view>
-          <text class="user-m">认证田主 · 已种植 49 天</text>
+          <text class="user-m">认证田主{{ plantedDays ? ` · 已种植 ${plantedDays} 天` : '' }}</text>
         </view>
       </view>
       <view class="setting" @tap="toSettings">⚙️</view>
@@ -41,7 +41,7 @@
       </view>
       <view class="stat-divider" />
       <view class="stat-item" @tap="toCoupons">
-        <text class="stat-n">¥50</text>
+        <text class="stat-n">{{ couponCount }}</text>
         <text class="stat-l">可用券</text>
       </view>
     </view>
@@ -116,6 +116,8 @@ import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useAppStore } from '../../stores/mock';
 import { useOrderStore } from '../../stores/orders';
+import { listMyCoupons } from '@cloud-farm/api-client';
+import { getPlantedDays } from '../../utils/season';
 
 const store = useAppStore();
 const { user, isLoggedIn } = storeToRefs(store);
@@ -123,6 +125,18 @@ const { user, isLoggedIn } = storeToRefs(store);
 // P4-E: 订单走 store(API + mock 兜底), 不再 import ORDERS 常量
 const orderStore = useOrderStore();
 const { list: orders } = storeToRefs(orderStore);
+
+// P8 B: 种植天数 + 可用券数(真数据)
+const plantedDays = computed(() => getPlantedDays(user.value?.createdAt));
+const couponCount = ref('—');
+async function loadCoupons() {
+  try {
+    const list = await listMyCoupons();
+    couponCount.value = String(list.filter(c => c.status === 'unused').length);
+  } catch {
+    couponCount.value = '0';
+  }
+}
 
 const ORDER_TABS = [
   { key: 'all',        label: '全部' },
@@ -139,8 +153,11 @@ const filteredOrders = computed(() => {
 });
 
 onMounted(() => {
-  // 先尝试恢复登录(如果有 token), 再拉订单
-  store.bootstrap().finally(() => orderStore.fetch());
+  // 先尝试恢复登录(如果有 token), 再拉订单 + 券
+  store.bootstrap().finally(() => {
+    orderStore.fetch();
+    if (store.isLoggedIn) loadCoupons();
+  });
 });
 
 const menus = [
@@ -163,8 +180,8 @@ const rows = [
 const toLogin = () => Taro.navigateTo({ url: '/pages/login/index' })
   .catch(() => Taro.showToast({ title: '请先登录', icon: 'none' }));
 
-const toSettings = () => Taro.showToast({ title: '设置页（待开放）', icon: 'none' });
-const toCoupons = () => Taro.showToast({ title: '优惠券（待开放）', icon: 'none' });
+const toSettings = () => Taro.navigateTo({ url: '/pages/settings/index' });
+const toCoupons = () => Taro.navigateTo({ url: '/pages/coupons/index' });
 
 const goOrders = (tab) => {
   Taro.navigateTo({ url: `/pages/orders/index?active=${tab}` })
@@ -184,10 +201,10 @@ const onMenu = (m) => {
     case 'addr':       return nav('/pages/address/index');
     case 'crops':      return nav('/pages/crops/index');
     case 'photos':     return nav('/pages/photos/index');
-    case 'coupon':     return Taro.showToast({ title: '优惠券（待开放）', icon: 'none' });
-    case 'invite':     return Taro.showToast({ title: '邀请好友（待开放）', icon: 'none' });
+    case 'coupon':     return nav('/pages/coupons/index');
+    case 'invite':     return nav('/pages/invite/index');
     case 'enterprise': return Taro.showToast({ title: '企业合作咨询 400-8888-666', icon: 'none' });
-    case 'help':       return Taro.showToast({ title: '帮助中心（待开放）', icon: 'none' });
+    case 'help':       return nav('/pages/help/index');
     case 'contact':    return Taro.showToast({ title: '客服 400-8888-666', icon: 'none' });
     default:           return Taro.showToast({ title: m.label, icon: 'none' });
   }

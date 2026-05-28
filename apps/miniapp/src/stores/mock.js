@@ -572,9 +572,9 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    /** 真登录: 走 /api/auth/login,成功后拉地址 */
-    async loginReal(phone, code) {
-      const data = await apiLogin({ phone, code });
+    /** 真登录: 走 /api/auth/login,成功后拉地址。inviteCode 选填(新用户注册发券) */
+    async loginReal(phone, code, inviteCode) {
+      const data = await apiLogin({ phone, code, inviteCode });
       this.user = {
         nickname: data.user.nickname,
         avatar: data.user.avatar,

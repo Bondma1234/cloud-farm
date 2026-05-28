@@ -148,6 +148,8 @@ cloud-farm/
 | **Admin · Crop** | Crop POST/PATCH/PATCH:status/DELETE(被订单引用时 409) | admin·operator (delete 仅 admin) |
 | **Admin · Journal** | POST `/admin/journal` 主动发布 + DELETE | admin·operator·agronomist |
 | **Admin · Photo** | GET `/admin/photos` 全状态 + PATCH :id/status + DELETE | admin·operator·cs |
+| **Coupon** | GET `/users/me/coupons`(过期自动标记) | JWT |
+| **Invite** | GET `/users/me/invite`(邀请码 + 统计) + login 带 inviteCode 发券 | JWT / 公开 |
 
 横切关注:全局 `ValidationPipe` + `TransformInterceptor`(统一 `{code,message,data}` 包装)+ `AllExceptionsFilter` + CORS + Swagger。
 

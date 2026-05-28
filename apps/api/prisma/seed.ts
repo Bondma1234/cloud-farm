@@ -692,6 +692,40 @@ async function main() {
   }
   console.log(`  ✓ ${extraPhotos.length} 扩充照片墙`);
 
+  // ============ 11. P8 B: 优惠券模板 + 给 demo 用户发券 ============
+  const coupons = [
+    { id: 'cp-newuser-50',  name: '新人立减券',   type: 'discount', amount: 50,  threshold: 299, scope: 'all',   validDays: 30, desc: '新用户专享,认养/商城通用' },
+    { id: 'cp-invite-50',   name: '邀请有礼券',   type: 'discount', amount: 50,  threshold: 199, scope: 'all',   validDays: 60, desc: '邀请好友双方各得' },
+    { id: 'cp-adopt-100',   name: '认养满减券',   type: 'discount', amount: 100, threshold: 699, scope: 'adopt', validDays: 45, desc: '认养套餐满 699 减 100' },
+    { id: 'cp-shop-20',     name: '商城无门槛券', type: 'cash',     amount: 20,  threshold: 0,   scope: 'shop',  validDays: 15, desc: '农产品商城无门槛立减' },
+    { id: 'cp-festival-30', name: '丰收节福利券', type: 'discount', amount: 30,  threshold: 158, scope: 'shop',  validDays: 20, desc: '丰收季限定' },
+  ];
+  for (const c of coupons) {
+    await prisma.coupon.upsert({ where: { id: c.id }, create: c, update: c });
+  }
+  console.log(`  ✓ ${coupons.length} 优惠券模板`);
+
+  // 给 demo 用户发 4 张券(覆盖 unused / 即将过期 / 已过期 / 已用)
+  const now = new Date();
+  const addDays = (n: number) => { const d = new Date(now); d.setDate(d.getDate() + n); return d; };
+  const demoCoupons = [
+    { id: 'uc-demo-1', userId: user.id, couponId: 'cp-newuser-50',  status: 'unused', source: 'signup', expireAt: addDays(20), usedAt: null,        usedOrderId: null },
+    { id: 'uc-demo-2', userId: user.id, couponId: 'cp-shop-20',     status: 'unused', source: 'system', expireAt: addDays(3),  usedAt: null,        usedOrderId: null },
+    { id: 'uc-demo-3', userId: user.id, couponId: 'cp-adopt-100',   status: 'used',   source: 'system', expireAt: addDays(40), usedAt: addDays(-5), usedOrderId: 'ORD-2026-0418' },
+    { id: 'uc-demo-4', userId: user.id, couponId: 'cp-festival-30', status: 'expired',source: 'system', expireAt: addDays(-3), usedAt: null,        usedOrderId: null },
+  ];
+  for (const uc of demoCoupons) {
+    await prisma.userCoupon.upsert({ where: { id: uc.id }, create: uc, update: uc });
+  }
+  console.log(`  ✓ ${demoCoupons.length} demo 用户优惠券`);
+
+  // 给 demo 用户一个固定邀请码(方便演示)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { inviteCode: 'CFDEMO88' },
+  });
+  console.log('  ✓ demo 用户邀请码 CFDEMO88');
+
   console.log('🌾 seed 完成');
 }
 

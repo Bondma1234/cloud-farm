@@ -178,6 +178,7 @@ export interface Crop {
 export interface LoginParams {
   phone: string;
   code: string;
+  inviteCode?: string;   // P8 B: 新用户注册可带邀请码
 }
 
 export interface AuthTokens {

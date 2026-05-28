@@ -23,13 +23,49 @@ model User {
   role      String   @default("customer") // customer / agronomist / cs / operator / admin
   // P8 W2: 软禁用,active=false 时 JWT 校验直接拒登,但历史订单还在
   active    Boolean  @default(true)
+  // P8 B: 邀请体系
+  inviteCode String? @unique           // 用户的邀请码(首次访问邀请页生成)
+  invitedBy  Int?                       // 谁邀请的我(对方 user.id)
   openid    String?  @unique
   unionid   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  addresses Address[]
-  orders    Order[]
+  addresses   Address[]
+  orders      Order[]
+  userCoupons UserCoupon[]
+}
+
+// ============ Coupon(优惠券模板)P8 B ============
+model Coupon {
+  id        String   @id            // 'cp-newuser-50'
+  name      String                  // '新人立减券'
+  type      String   @default("discount") // discount(满减) / cash(无门槛现金)
+  amount    Int                     // 减免金额(元)
+  threshold Int      @default(0)    // 满 X 元可用,0=无门槛
+  scope     String   @default("all")// all / adopt(认养) / shop(商城)
+  validDays Int      @default(30)   // 领取后有效天数
+  desc      String   @default("")
+  status    String   @default("active") // active / archived
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userCoupons UserCoupon[]
+}
+
+// ============ UserCoupon(用户持有的券)P8 B ============
+model UserCoupon {
+  id          String    @id @default(cuid())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponId    String
+  coupon      Coupon    @relation(fields: [couponId], references: [id])
+  status      String    @default("unused") // unused / used / expired
+  source      String    @default("system") // system / invite / signup
+  grantedAt   DateTime  @default(now())
+  expireAt    DateTime
+  usedAt      DateTime?
+  usedOrderId String?
 }
 
 // ============ Address ============

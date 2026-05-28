@@ -22,6 +22,11 @@
           {{ countdown > 0 ? `${countdown}s 后重发` : '获取验证码' }}
         </view>
       </view>
+      <!-- P8 B: 可选邀请码 -->
+      <view class="field">
+        <text class="field-p">🎁</text>
+        <input v-model="inviteCode" class="field-i" maxlength="8" placeholder="邀请码(选填,双方各得 50 元券)" />
+      </view>
 
       <view class="agree" @tap="agreed = !agreed">
         <view :class="['chk', agreed && 'on']">
@@ -60,6 +65,7 @@ import { useAppStore } from '../../stores/mock';
 const store = useAppStore();
 const phone = ref('');
 const code = ref('');
+const inviteCode = ref('');
 const agreed = ref(false);
 const countdown = ref(0);
 
@@ -93,7 +99,8 @@ const doLogin = async () => {
   Taro.showLoading({ title: '登录中...' });
   try {
     // P4-E: 调真接口拿 JWT,后端会 upsert 用户,token 自动存 localStorage
-    await store.loginReal(phone.value, code.value);
+    // P8 B: 带邀请码(选填),新用户首次注册时双方各得券
+    await store.loginReal(phone.value, code.value, inviteCode.value.trim().toUpperCase() || undefined);
     Taro.hideLoading();
     Taro.showToast({ title: '登录成功', icon: 'success' });
     setTimeout(() => Taro.switchTab({ url: '/pages/home/index' }), 800);
