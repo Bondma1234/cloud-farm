@@ -13,14 +13,13 @@
       </view>
       <view class="hero-card">
         <view class="stat">
-          <text class="stat-num" v-if="plantedDays">第 {{ plantedDays }} 天</text>
-          <text class="stat-num" v-else>欢迎</text>
-          <text class="stat-label">{{ plantedDays ? joinedDate : '注册后开始种地' }}</text>
+          <text class="stat-num">22°</text>
+          <text class="stat-label">河南·周口</text>
         </view>
         <view class="divider" />
         <view class="stat">
-          <text class="stat-num">{{ season.icon }} {{ season.season }}</text>
-          <text class="stat-label">{{ season.tip }}</text>
+          <text class="stat-num">多云</text>
+          <text class="stat-label">适宜生长</text>
         </view>
       </view>
     </view>
@@ -163,7 +162,7 @@ const plantedDays = computed(() => getPlantedDays(user.value?.createdAt));
 const joinedDate = computed(() => formatJoinedDate(user.value?.createdAt));
 const season = computed(() => getCurrentSeason());
 const heroSub = computed(() => {
-  if (plantedDays.value) return `你的田园第 ${plantedDays.value} 天 · ${season.value.season}季种植`;
+  if (plantedDays.value) return `今天是你的田园第 ${plantedDays.value} 天`;
   return `${season.value.season}季正适合种植 · 选块田一起开始`;
 });
 
@@ -191,7 +190,7 @@ onMounted(async () => {
 
 .hero {
   background: linear-gradient(135deg, #56B383 0%, #4CA777 45%, #2E7D32 100%);
-  padding: 28px 20px 56px;
+  padding: 26px 20px 56px;
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -231,7 +230,7 @@ onMounted(async () => {
 .divider { width: 1px; background: var(--color-divider); margin: 6px 0; }
 
 .quick-grid {
-  margin: 56px 16px 0;
+  margin: 40px 16px 0;
   background: #fff; border-radius: 16px; padding: 18px 8px;
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
   box-shadow: var(--shadow-sm);

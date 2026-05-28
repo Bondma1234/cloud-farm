@@ -19,19 +19,38 @@ function getSeason(month /* 1-12 */) {
   return SEASONS[3];
 }
 
+// 河南周口 各月典型气温(白天均温,°C)+ 天气倾向 —— 不接真天气 API,按月份给合理值
+const HENAN_MONTHLY = [
+  { temp: 4,  cond: '晴冷' }, // 1月
+  { temp: 7,  cond: '多云' },
+  { temp: 14, cond: '多云' },
+  { temp: 21, cond: '晴' },
+  { temp: 26, cond: '晴' },
+  { temp: 31, cond: '多云' },
+  { temp: 33, cond: '雷阵雨' },
+  { temp: 32, cond: '多云' },
+  { temp: 27, cond: '晴' },
+  { temp: 21, cond: '晴' },
+  { temp: 13, cond: '多云' },
+  { temp: 6,  cond: '晴冷' }, // 12月
+];
+
 /**
  * 当前季节卡片信息
- * 返回:{ icon, season, crops, tip, monthLabel }
- *   icon:    '🌸'
- *   season:  '春'
- *   crops:   '小番茄 / 草莓'
- *   tip:     '宜播种,温度回升'
- *   monthLabel: '5月 · 立夏'(只展示月份,没节气库就只 '5月')
+ * 返回:{ icon, season, crops, tip, monthLabel, temp, cond, location, weatherTip }
  */
 export function getCurrentSeason(date = new Date()) {
   const month = date.getMonth() + 1;
   const [, season, icon, crops, tip] = getSeason(month);
-  return { icon, season, crops, tip, monthLabel: `${month}月` };
+  const w = HENAN_MONTHLY[month - 1] || { temp: 22, cond: '多云' };
+  // 适宜度文案:15-30° 适宜生长
+  const weatherTip = w.temp >= 15 && w.temp <= 30 ? '适宜生长'
+    : w.temp > 30 ? '注意防暑遮阳'
+    : '注意保温';
+  return {
+    icon, season, crops, tip, monthLabel: `${month}月`,
+    temp: w.temp, cond: w.cond, location: '河南·周口', weatherTip,
+  };
 }
 
 /**
