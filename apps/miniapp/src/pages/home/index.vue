@@ -44,14 +44,31 @@
       </view>
     </view>
 
-    <!-- U1b: 我的田园数据卡(登录后显示) -->
+    <!-- U1b / C1: 我的田园数据卡(登录后显示) -->
     <view v-if="isLoggedIn" class="mygarden" @tap="go('/pages/my-plot/index')">
       <view class="mg-bg" />
       <view class="mg-head">
         <text class="mg-t">🌾 我的田园</text>
         <text class="mg-more">进我的田 ›</text>
       </view>
-      <view class="mg-stats">
+      <!-- C1: 有种植中地块 → 进度环 + 作物阶段 -->
+      <view v-if="myPlot" class="mg-crop">
+        <ProgressRing
+          :percent="myPlot.progress"
+          :emoji="myPlot.cropEmoji"
+          :size="62"
+          :stroke="6"
+          track-color="rgba(255,255,255,0.28)"
+          fill-color="#F4B942"
+          text-color="#fff"
+        />
+        <view class="mg-crop-info">
+          <text class="mg-crop-name">{{ myPlot.crop }} · {{ myPlot.stage }}</text>
+          <text class="mg-crop-days">第 {{ myPlot.daysElapsed }} / {{ myPlot.daysTotal }} 天</text>
+          <text class="mg-crop-next">⏰ {{ myPlot.nextAction }}</text>
+        </view>
+      </view>
+      <view class="mg-stats" :class="{ 'mg-stats--divided': myPlot }">
         <view class="mg-stat">
           <text class="mg-n">{{ growingDisplay }}</text>
           <text class="mg-l">认养中</text>
@@ -70,7 +87,10 @@
     <!-- 热门套餐 -->
     <view class="section">
       <view class="sec-head">
-        <text class="sec-title">精选认养</text>
+        <view class="sec-title-wrap">
+          <text class="sec-title">精选认养</text>
+          <text class="sec-sub">看得见的安心田</text>
+        </view>
         <text class="sec-more" @tap="go('/pages/packages/index')">全部 ›</text>
       </view>
       <!-- P8 视觉 D: 拉数据时骨架屏占位,不再白屏 -->
@@ -137,9 +157,11 @@ import { storeToRefs } from 'pinia';
 import { LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
 import { usePackageStore } from '../../stores/packages';
 import { useOrderStore } from '../../stores/orders';
+import { useMyPlotStore } from '../../stores/myPlot';
 import { getCurrentSeason, getPlantedDays, formatJoinedDate } from '../../utils/season';
 import { useCountUp } from '../../utils/useCountUp';
 import Skeleton from '../../components/Skeleton.vue';
+import ProgressRing from '../../components/ProgressRing.vue';
 
 const store = useAppStore();
 const { user, isLoggedIn } = storeToRefs(store);
@@ -152,6 +174,10 @@ const { list: packages } = storeToRefs(pkgStore);
 const orderStore = useOrderStore();
 const orderCount = computed(() => orderStore.list.length);
 const growingCount = computed(() => orderStore.list.filter(o => o.status === 'growing').length);
+
+// C1: 种植中地块(给"我的田园"卡的进度环)
+const myPlotStore = useMyPlotStore();
+const { plot: myPlot } = storeToRefs(myPlotStore);
 
 const liveRooms = LIVE_ROOMS.filter(l => l.live);
 // home 页只显示最近 3 条，全部走 /pages/journal
@@ -180,8 +206,11 @@ onMounted(async () => {
   pkgStore.fetch();
   // 拉真用户 createdAt(没登录就静默跳过)
   await store.bootstrap?.();
-  // 登录了就拉订单(给"我的田园"数据卡)
-  if (store.isLoggedIn) orderStore.fetch();
+  // 登录了就拉订单 + 种植中地块(给"我的田园"数据卡)
+  if (store.isLoggedIn) {
+    orderStore.fetch();
+    myPlotStore.fetch().catch(() => {});
+  }
 });
 </script>
 
@@ -189,7 +218,11 @@ onMounted(async () => {
 .page { padding-bottom: 32px; }
 
 .hero {
-  background: linear-gradient(135deg, #56B383 0%, #4CA777 45%, #2E7D32 100%);
+  /* C1: 多层径向渐变,比单层线性更柔和有空间感 */
+  background:
+    radial-gradient(120% 80% at 82% 0%, #6FC196 0%, rgba(111,193,150,0) 55%),
+    radial-gradient(140% 90% at 0% 100%, #2E7D32 0%, rgba(46,125,50,0) 60%),
+    linear-gradient(150deg, #56B383 0%, #4CA777 50%, #2E7D32 100%);
   padding: 26px 20px 56px;
   color: #fff;
   position: relative;
@@ -240,8 +273,10 @@ onMounted(async () => {
   font-size: 13px;
 }
 .quick-item .ico {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: var(--color-primary-light);
+  /* C1: 圆形 → 圆角方块 + 双色渐变 + 微浮起,质感更强 */
+  width: 50px; height: 50px; border-radius: 16px;
+  background: linear-gradient(145deg, #EAF6EE 0%, #D3E9DA 100%);
+  box-shadow: var(--shadow-sm);
   display: flex; align-items: center; justify-content: center;
   font-size: 24px;
 }
@@ -262,14 +297,34 @@ onMounted(async () => {
 .mg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; position: relative; z-index: 1; }
 .mg-t { font-size: 16px; font-weight: 700; }
 .mg-more { font-size: 12px; opacity: 0.85; }
+
+/* C1: 进度环 + 作物阶段行 */
+.mg-crop {
+  display: flex; align-items: center; gap: 14px;
+  position: relative; z-index: 1; margin-bottom: 4px;
+}
+.mg-crop-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mg-crop-name { font-size: 15px; font-weight: 700; }
+.mg-crop-days { font-size: 12px; opacity: 0.85; }
+.mg-crop-next {
+  font-size: 11px; align-self: flex-start;
+  background: rgba(255,255,255,0.18); padding: 3px 9px; border-radius: 999px;
+}
+
 .mg-stats { display: flex; position: relative; z-index: 1; }
+.mg-stats--divided {
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.18);
+}
 .mg-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .mg-n { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .mg-l { font-size: 11px; opacity: 0.85; }
 
 .section { margin: 20px 16px 0; }
 .sec-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.sec-title-wrap { display: flex; align-items: baseline; gap: 8px; }
 .sec-title { font-size: 17px; font-weight: 600; }
+.sec-sub { font-size: 12px; color: var(--color-text-mute); }
 .sec-more { font-size: 13px; color: var(--color-text-mute); }
 
 .h-scroll { white-space: nowrap; }

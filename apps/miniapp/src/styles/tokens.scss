@@ -61,4 +61,19 @@
   /* 安全区(P8 视觉 E),没刘海的设备 env() 返 0,不影响布局 */
   --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* ========== 批 C0: 运动 token ==========
+     全站动效统一用这几条曲线/时长,避免各页各写一套 cubic-bezier。
+     spring = 回弹(按钮按压/弹出);out = 顺滑减速(进场/位移);in-out = 平滑(切换) */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:    cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-fast:   0.12s;   /* 点击反馈 */
+  --dur-base:   0.24s;   /* 一般过渡 */
+  --dur-slow:   0.4s;    /* 进场 / 大位移 */
+
+  /* 卡片基类配套(给 .cf-card 用) */
+  --card-pad: var(--space-4);
+  --card-radius: var(--radius-xl);
+  --card-shadow: var(--shadow-md);
 }

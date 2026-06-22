@@ -21,21 +21,16 @@
           <view class="pill">{{ plot.plotId }}</view>
         </view>
         <view class="crop-row">
-          <!-- U2a: 生长进度环 -->
-          <view class="ring">
-            <svg viewBox="0 0 72 72" class="ring-svg">
-              <circle class="ring-bg" cx="36" cy="36" r="32" />
-              <circle
-                class="ring-fg" cx="36" cy="36" r="32"
-                :stroke-dasharray="ringCirc"
-                :stroke-dashoffset="ringOffset"
-              />
-            </svg>
-            <view class="ring-center">
-              <text class="ring-emoji">{{ plot.cropEmoji }}</text>
-              <text class="ring-pct">{{ plot.progress }}%</text>
-            </view>
-          </view>
+          <!-- C2: 复用 ProgressRing 组件(后台标签页安全的 grow 动画) -->
+          <ProgressRing
+            :percent="plot.progress"
+            :emoji="plot.cropEmoji"
+            :size="72"
+            :stroke="6"
+            track-color="rgba(255,255,255,0.22)"
+            fill-color="#F4B942"
+            text-color="#fff"
+          />
           <view class="crop-info">
             <text class="crop-name">{{ plot.crop }} · {{ plot.stage }}</text>
             <text class="crop-days">第 {{ plot.daysElapsed }} / {{ plot.daysTotal }} 天</text>
@@ -64,6 +59,8 @@
       <!-- 摄像头画面 -->
       <view class="live">
         <image :src="store.cameraUrl || '/images/plot-snapshot.jpg'" mode="aspectFill" class="live-img" />
+        <!-- C2: 抓拍快门闪光 -->
+        <view class="shutter" :class="{ 'shutter--fire': flashing }" />
         <view class="live-tag" v-if="plot.camera.online">● 在线</view>
         <view class="live-tag offline" v-else>● 离线</view>
         <view class="live-ctrl" v-if="plot.camera.ptzSupported">
@@ -122,7 +119,7 @@
           <text class="block-more" @tap="goJournal">查看全部 ›</text>
         </view>
         <view v-if="journalLoading" class="muted">加载中…</view>
-        <view v-else-if="plotJournal.length" class="timeline">
+        <view v-else-if="plotJournal.length" class="timeline cf-stagger">
           <view class="tl-item" v-for="(j, i) in plotJournal" :key="j.id">
             <view class="tl-rail">
               <view class="tl-dot">{{ j.icon }}</view>
@@ -153,12 +150,17 @@ import { useAppStore, COMMANDS } from '../../stores/mock';
 import { createCommand, listJournal, ApiError } from '@cloud-farm/api-client';
 import Skeleton from '../../components/Skeleton.vue';
 import EmptyState from '../../components/EmptyState.vue';
+import ProgressRing from '../../components/ProgressRing.vue';
+import { showSuccess } from '../../components/SuccessOverlay.vue';
 
 const store = useMyPlotStore();
 const cmdStore = useCommandStore();
 const appStore = useAppStore();
 const { plot } = storeToRefs(store);
 const commands = COMMANDS;
+
+// C2: 抓拍快门闪光态
+const flashing = ref(false);
 
 // U2b: 该地块的生长日记(最近 5 条)
 const plotJournal = ref([]);
@@ -175,14 +177,6 @@ async function loadPlotJournal() {
     journalLoading.value = false;
   }
 }
-
-// U2a: 生长进度环(SVG circle r=32 周长)
-const RING_R = 32;
-const ringCirc = 2 * Math.PI * RING_R;
-const ringOffset = computed(() => {
-  const p = Math.max(0, Math.min(100, plot.value?.progress || 0));
-  return ringCirc * (1 - p / 100);
-});
 
 // U2a: 生长阶段(4 段)+ 当前阶段判定(按 progress / stage 名)
 const STAGES = [
@@ -226,7 +220,8 @@ const sendCmd = async (c) => {
           plotId: plot.value.plotId,
         });
         Taro.hideLoading();
-        Taro.showToast({ title: `${c.label}指令已下单`, icon: 'success' });
+        // C2: 动画化成功反馈替代普通 toast
+        await showSuccess({ title: `${c.label}已提交`, subtitle: '农技员将尽快处理', emoji: c.icon, duration: 1100 });
         // 刷新指令历史 store,用户进 /commands 能立即看到
         cmdStore.fetch({ force: true }).catch(() => {});
       } catch (e) {
@@ -249,12 +244,15 @@ const onPtz = async (dir) => {
 
 const onSnapshot = async () => {
   if (store.snapshotLoading) return;
+  // C2: 点下立刻闪一下快门,给即时触感
+  flashing.value = true;
+  setTimeout(() => { flashing.value = false; }, 420);
   try {
     const r = await store.snapshot();
     if (r) {
       // 把抓拍图设为新的"摄像头画面"(让用户立刻看到结果)
       store.cameraUrl = r.url;
-      Taro.showToast({ title: '已抓拍并加入生长日记', icon: 'success' });
+      await showSuccess({ title: '已抓拍', subtitle: '照片已加入生长日记', emoji: '📸', duration: 1100 });
       loadPlotJournal();   // U2b: 刷新时间线
     }
   } catch (e) {
@@ -302,21 +300,6 @@ onMounted(async () => {
 
 .crop-row { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
 
-/* U2a 进度环 */
-.ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
-.ring-svg { width: 72px; height: 72px; transform: rotate(-90deg); }
-.ring-bg { fill: none; stroke: rgba(255,255,255,0.22); stroke-width: 6; }
-.ring-fg {
-  fill: none; stroke: #F4B942; stroke-width: 6; stroke-linecap: round;
-  transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1);
-}
-.ring-center {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 0;
-}
-.ring-emoji { font-size: 22px; line-height: 1; }
-.ring-pct { font-size: 11px; font-weight: 700; margin-top: 1px; }
-
 .crop-info { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .crop-name { font-size: 15px; font-weight: 600; }
 .crop-days { font-size: 12px; opacity: 0.88; }
@@ -351,6 +334,21 @@ onMounted(async () => {
 
 .live { margin: 0 16px 10px; position: relative; border-radius: 16px; overflow: hidden; background: #000; }
 .live-img { width: 100%; height: 220px; display: block; }
+
+/* C2: 抓拍快门闪光 */
+.shutter {
+  position: absolute; inset: 0; background: #fff; opacity: 0;
+  pointer-events: none; z-index: 5;
+}
+.shutter--fire { animation: shutter-flash 0.42s var(--ease-out); }
+@keyframes shutter-flash {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shutter--fire { animation: none; }
+}
 .live-tag {
   position: absolute; top: 12px; left: 12px;
   background: var(--color-danger); color: #fff; font-size: 11px;
