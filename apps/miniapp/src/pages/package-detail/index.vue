@@ -32,7 +32,7 @@
 
     <view class="block">
       <text class="block-title">服务流程</text>
-      <view class="steps">
+      <view class="steps cf-stagger">
         <view class="step">
           <view class="step-idx">1</view>
           <view class="step-body">
@@ -146,9 +146,15 @@ const contact = () => Taro.showToast({ title: '客服会话（mock）', icon: 'n
 .feat-t { font-size: 14px; }
 
 .crop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.crop { background: var(--color-surface-alt); border-radius: 12px; padding: 14px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.crop {
+  background: var(--color-surface-alt); border-radius: 12px; padding: 14px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transition: transform var(--dur-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.crop:active { transform: scale(0.94); }
 .crop-em { font-size: 28px; }
-.crop-n { font-size: 12px; color: var(--color-text-sub); }
+.crop-n { font-size: var(--fs-sm); color: var(--color-text-sub); }
 
 .steps { display: flex; flex-direction: column; gap: 12px; }
 .step { display: flex; gap: 12px; }

@@ -11,7 +11,7 @@
         <view class="leg"><view class="dot sold" /><text>已售</text></view>
         <view class="leg"><view class="dot active" /><text>选中</text></view>
       </view>
-      <view class="grid">
+      <view class="grid cf-stagger">
         <view
           v-for="p in plots"
           :key="p.id"
@@ -134,10 +134,20 @@ onMounted(load);
   aspect-ratio: 1 / 1; border-radius: 8px; background: var(--color-primary);
   display: flex; align-items: center; justify-content: center;
   position: relative; color: #fff; font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-out);
 }
+/* 可选地块:按下下沉 */
+.cell.available:active { transform: scale(0.92); }
 .cell.sold { background: #CCC; color: #888; }
-.cell.active { background: var(--color-accent); color: #8D6E00; box-shadow: 0 0 0 3px rgba(244,185,66,0.35); }
-.cell-id { font-size: 13px; }
+.cell.active {
+  background: var(--color-accent); color: #8D6E00;
+  box-shadow: 0 0 0 3px rgba(244,185,66,0.4), var(--shadow-md);
+  transform: scale(1.08);   /* 选中弹出 */
+  z-index: 1;
+}
+.cell-id { font-size: var(--fs-md); }
 .cell-tag { position: absolute; top: 4px; right: 6px; font-size: 10px; opacity: 0.7; }
 
 .compass { position: absolute; top: 14px; right: 18px; font-size: 12px; color: var(--color-text-sub); }

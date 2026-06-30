@@ -106,11 +106,14 @@ scroll-view[scroll-y] {
   from { opacity: 0; transform: translate3d(0, 12px, 0); }
   to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
+/* fill-mode 用 backwards 而非 both:延迟期间保持起始态(防闪),
+   动画结束后把 transform/opacity 交还给元素自身 CSS——
+   否则 both 会一直占用 transform,覆盖掉如 .cell.active 的 scale 选中态。 */
 .cf-enter {
-  animation: cf-fade-up var(--dur-slow) var(--ease-out) both;
+  animation: cf-fade-up var(--dur-slow) var(--ease-out) backwards;
 }
 .cf-stagger > * {
-  animation: cf-fade-up var(--dur-slow) var(--ease-out) both;
+  animation: cf-fade-up var(--dur-slow) var(--ease-out) backwards;
 }
 @for $i from 1 through 8 {
   .cf-stagger > *:nth-child(#{$i}) { animation-delay: #{($i - 1) * 0.06}s; }

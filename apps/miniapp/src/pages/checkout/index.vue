@@ -59,10 +59,10 @@
     <view class="card">
       <view class="row"><text class="lab">套餐费用</text><text class="val">¥ {{ pkg.price }}</text></view>
       <view class="row"><text class="lab">运费</text><text class="val">包邮</text></view>
-      <view class="row"><text class="lab">优惠</text><text class="val-dis">- ¥ {{ discount }}</text></view>
+      <view class="row"><text class="lab">优惠</text><text class="val-dis">- ¥ {{ discountDisplay }}</text></view>
       <view class="row total">
         <text class="lab">应付</text>
-        <text class="val-total">¥ {{ finalPrice }}</text>
+        <text class="val-total">¥ {{ finalDisplay }}</text>
       </view>
     </view>
 
@@ -71,7 +71,7 @@
     <view class="footer">
       <view class="f-total">
         <text class="f-l">实付</text>
-        <text class="f-v">¥ {{ finalPrice }}</text>
+        <text class="f-v">¥ {{ finalDisplay }}</text>
       </view>
       <view class="f-btn" @tap="pay">提交订单</view>
     </view>
@@ -119,6 +119,7 @@ import { createOrder, listMyCoupons, ApiError } from '@cloud-farm/api-client';
 import { showSuccess } from '../../components/SuccessOverlay.vue';
 import { usePackageStore } from '../../stores/packages';
 import { useAppStore, PACKAGES as MOCK_PACKAGES } from '../../stores/mock';
+import { useCountUp } from '../../utils/useCountUp';
 
 const router = useRouter();
 const pkgStore = usePackageStore();
@@ -148,6 +149,10 @@ const usableCoupons = computed(() => {
 const pickedCoupon = computed(() => usableCoupons.value.find(c => c.id === pickedCouponId.value) || null);
 const discount = computed(() => pickedCoupon.value?.amount || 0);
 const finalPrice = computed(() => Math.max(0, (pkg.value?.price || 0) - discount.value));
+
+// C3: 选券抵扣后,应付/实付金额数字滚动,强化"成交感"
+const finalDisplay = useCountUp(() => finalPrice.value);
+const discountDisplay = useCountUp(() => discount.value);
 
 const openCoupon = () => { couponSheet.value = true; };
 const selectCoupon = (id) => { pickedCouponId.value = id; couponSheet.value = false; };
@@ -248,7 +253,16 @@ onMounted(async () => {
 .pkg-plot { font-size: 12px; color: var(--color-primary-dark); }
 
 .crop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.crop { background: var(--color-surface-alt); border-radius: 10px; padding: 12px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 2px solid transparent; }
+.crop {
+  background: var(--color-surface-alt); border-radius: 10px; padding: 12px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 2px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.crop:active { transform: scale(0.94); }
 .crop.on { background: var(--color-primary-light); border-color: var(--color-primary); }
 .crop-em { font-size: 24px; }
 .crop-n { font-size: 12px; }

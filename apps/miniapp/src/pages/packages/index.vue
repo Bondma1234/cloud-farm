@@ -18,7 +18,7 @@
     <!-- P8 视觉 D: 骨架屏代替"加载中..."文字 -->
     <Skeleton v-if="store.loading && !store.list.length" type="card" :count="3" />
 
-    <view v-else class="list">
+    <view v-else class="list cf-stagger" :key="active">
       <view class="card" v-for="p in filtered" :key="p.id" @tap="goDetail(p.id)">
         <image :src="p.cover" mode="aspectFill" class="cover" />
         <view class="tag">{{ p.tag }}</view>
@@ -99,8 +99,11 @@ onMounted(() => store.fetch());
 .filter { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
 .chip {
   padding: 6px 14px; border-radius: 999px; background: #fff;
-  font-size: 13px; color: var(--color-text-sub); flex-shrink: 0;
+  font-size: var(--fs-md); color: var(--color-text-sub); flex-shrink: 0;
   border: 1px solid var(--color-divider);
+  transition: background var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out);
 }
 .chip.active {
   background: var(--color-primary); color: #fff; border-color: var(--color-primary);
@@ -116,20 +119,20 @@ onMounted(() => store.fetch());
 }
 .body { padding: 14px 16px 16px; }
 .top { display: flex; justify-content: space-between; align-items: baseline; }
-.name { font-size: 16px; font-weight: 600; }
-.price-s { font-size: 12px; color: var(--color-danger); }
+.name { font-size: var(--fs-lg); font-weight: 600; }
+.price-s { font-size: var(--fs-sm); color: var(--color-danger); }
 .price-n { font-size: 22px; font-weight: 700; color: var(--color-danger); }
-.price-u { font-size: 11px; color: var(--color-text-mute); margin-left: 2px; }
+.price-u { font-size: var(--fs-xs); color: var(--color-text-mute); margin-left: 2px; }
 
 .hl { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .chip-sm {
-  font-size: 11px; background: var(--color-primary-light);
+  font-size: var(--fs-xs); background: var(--color-primary-light);
   color: var(--color-primary-dark); padding: 3px 8px; border-radius: 4px;
 }
-.crops { font-size: 12px; color: var(--color-text-mute); margin-top: 10px; }
+.crops { font-size: var(--fs-sm); color: var(--color-text-mute); margin-top: 10px; }
 .crops-l { color: var(--color-text-sub); }
 .cta { display: flex; gap: 10px; margin-top: 14px; }
-.btn { flex: 1; text-align: center; padding: 10px; border-radius: 999px; font-size: 14px; font-weight: 600; }
+.btn { flex: 1; text-align: center; padding: 10px; border-radius: 999px; font-size: var(--fs-base); font-weight: 600; }
 .btn-primary { background: var(--color-primary); color: #fff; }
 .btn-ghost { background: var(--color-primary-light); color: var(--color-primary-dark); }
 </style>
