@@ -91,15 +91,6 @@
           </el-table>
         </el-card>
 
-        <el-alert
-          style="margin-top: 16px"
-          type="success"
-          show-icon
-          :closable="false"
-          title="P3 阶段"
-          description="套餐 CRUD 接通真后端: POST/PATCH/DELETE/PATCH:status 全部受 RBAC 守护(admin/operator 可写,admin 才能物理删除,且未被订单引用)。"
-        />
-
     <package-edit-dialog
       v-model="dialogOpen"
       :package="editing"

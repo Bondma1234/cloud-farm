@@ -83,18 +83,9 @@
           </el-table>
 
           <el-text type="info" size="small" style="margin-top:12px;display:block">
-            共 {{ list.length }} 条 · 取的是真实 SQLite 数据,只显示前 200 条
+            共 {{ list.length }} 条 · 最多显示前 200 条
           </el-text>
         </el-card>
-
-        <el-alert
-          style="margin-top: 16px"
-          type="success"
-          show-icon
-          :closable="false"
-          title="P3 阶段"
-          description="GET /api/admin/orders 是 admin 专属接口(role admin/operator/cs 可看), PATCH /admin/orders/:id/status 改状态(admin/operator 可改, cs 只读)。"
-        />
   </div>
 </template>
 

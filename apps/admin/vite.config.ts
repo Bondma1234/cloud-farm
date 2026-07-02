@@ -26,7 +26,8 @@ export default defineConfig({
   // 否则 dev 模式下按需加载会拆成 70+ 个 JS/CSS,浏览器主线程被海量请求卡死。
   // 改完这条后第一次重启会重新跑 optimize(约 5-10s),后续启动秒开。
   optimizeDeps: {
-    include: ['element-plus', '@element-plus/icons-vue', 'axios', 'echarts', 'vue-echarts'],
+    // zh-cn locale 是独立子路径导入,不列进来会触发 dev 中途 re-optimization(运行时 chunk 混载报错)
+    include: ['element-plus', 'element-plus/es/locale/lang/zh-cn', '@element-plus/icons-vue', 'axios', 'echarts', 'vue-echarts'],
   },
   server: {
     port: 5183,

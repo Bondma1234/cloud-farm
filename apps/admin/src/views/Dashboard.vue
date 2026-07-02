@@ -11,41 +11,45 @@
     <el-skeleton v-else-if="loading" :rows="8" animated />
 
     <template v-else-if="data">
-      <!-- 4 KPI 卡 -->
+      <!-- 4 KPI 卡(A2: count-up + 顶部色条 + hover 浮起) -->
       <el-row :gutter="16">
         <el-col :span="6">
-          <el-card shadow="hover">
+          <el-card shadow="hover" class="kpi-card accent-primary">
             <div class="kpi">
-              <div class="kpi-l">用户总数</div>
-              <div class="kpi-v primary">{{ data.totals.userCount }}</div>
+              <div class="kpi-l">👥 用户总数</div>
+              <div class="kpi-v primary">{{ userCountUp }}</div>
               <div class="kpi-s">含 customer / 农技员 / 客服 / 运营 / 管理员</div>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card shadow="hover">
+          <el-card shadow="hover" class="kpi-card accent-danger">
             <div class="kpi">
-              <div class="kpi-l">累计 GMV</div>
-              <div class="kpi-v danger">¥ {{ data.totals.gmvAll.toLocaleString() }}</div>
+              <div class="kpi-l">💰 累计 GMV</div>
+              <div class="kpi-v danger">¥ {{ gmvCountUp }}</div>
               <div class="kpi-s">已付款及以后状态的订单求和</div>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card shadow="hover">
+          <el-card shadow="hover" class="kpi-card accent-warning">
             <div class="kpi">
-              <div class="kpi-l">订单总数</div>
-              <div class="kpi-v warning">{{ data.totals.orderCount }}</div>
+              <div class="kpi-l">📦 订单总数</div>
+              <div class="kpi-v warning">{{ orderCountUp }}</div>
               <div class="kpi-s">含取消在内</div>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card shadow="hover" :class="{ alert: data.totals.commandPending > 0 }">
+          <el-card
+            shadow="hover"
+            class="kpi-card"
+            :class="data.totals.commandPending > 0 ? 'accent-danger alert' : 'accent-success'"
+          >
             <div class="kpi">
-              <div class="kpi-l">待处理工单</div>
+              <div class="kpi-l">📋 待处理工单</div>
               <div class="kpi-v" :class="data.totals.commandPending > 0 ? 'danger' : 'success'">
-                {{ data.totals.commandPending }}
+                {{ cmdCountUp }}
               </div>
               <div class="kpi-s">农技员请尽快接单</div>
             </div>
@@ -123,6 +127,7 @@ import {
 } from 'echarts/components';
 import VChart from 'vue-echarts';
 import { getAdminStats, type AdminStats, ApiError } from '@cloud-farm/api-client';
+import { useCountUp } from '@/composables/useCountUp';
 
 use([
   CanvasRenderer,
@@ -147,6 +152,12 @@ async function load() {
 }
 
 onMounted(load);
+
+// A2: KPI 数字滚动
+const userCountUp = useCountUp(() => data.value?.totals.userCount ?? 0);
+const gmvCountUp = useCountUp(() => data.value?.totals.gmvAll ?? 0);
+const orderCountUp = useCountUp(() => data.value?.totals.orderCount ?? 0);
+const cmdCountUp = useCountUp(() => data.value?.totals.commandPending ?? 0);
 
 // ============ ECharts options ============
 // 主色 #4ca777, 警告 #f4b942, 危险 #e57373
@@ -209,7 +220,8 @@ function makePieOption(kvs: { label: string; value: number }[]) {
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { orient: 'horizontal', bottom: 0, textStyle: { fontSize: 11 } },
-    color: ['#4ca777', '#f4b942', '#e57373', '#3498db', '#9b59b6', '#7f8c8d', '#16a085'],
+    // A2: 品牌绿系为主的统一色板(替换原蓝/紫混色)
+    color: ['#4ca777', '#f4b942', '#2e7d32', '#a5d6a7', '#e57373', '#90a4ae', '#6db997'],
     series: [
       {
         type: 'pie',
@@ -256,6 +268,26 @@ const packageBarOption = computed(() => ({
 <style scoped>
 .dashboard {
   /* layout 管高度 */
+}
+/* A2: KPI 卡顶部品牌色条 + hover 浮起 */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 3px;
+}
+.kpi-card.accent-primary::before { background: linear-gradient(90deg, #4ca777, #2e7d32); }
+.kpi-card.accent-danger::before  { background: linear-gradient(90deg, #e57373, #d35454); }
+.kpi-card.accent-warning::before { background: linear-gradient(90deg, #f4b942, #e09b18); }
+.kpi-card.accent-success::before { background: linear-gradient(90deg, #4ca777, #a5d6a7); }
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(38, 68, 51, 0.12);
 }
 .kpi {
   text-align: center;

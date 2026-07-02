@@ -48,6 +48,11 @@
         <span>系统设置 (P3)</span>
       </el-menu-item>
     </el-menu>
+    <!-- A1: 底部版本徽标 -->
+    <div class="aside-foot">
+      <span class="dot" />
+      <span>内部运营系统 · P8</span>
+    </div>
   </el-aside>
 </template>
 
@@ -64,15 +69,20 @@ const active = computed(() => route.path);
 .aside {
   background: #001628;
   color: #fff;
+  display: flex;
+  flex-direction: column;
 }
 .brand {
   height: 60px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  /* A1: 品牌区加一点绿色底光 */
+  background: linear-gradient(180deg, rgba(76, 167, 119, 0.12), transparent);
 }
 .brand .logo {
   font-size: 22px;
@@ -84,17 +94,45 @@ const active = computed(() => route.path);
 :deep(.el-menu) {
   background-color: transparent;
   border-right: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
 }
+/* A1: 菜单项圆角化 + 过渡,摆脱"贴边长条"的原生感 */
 :deep(.el-menu-item),
 :deep(.el-sub-menu__title) {
   color: #c8cdd6;
+  border-radius: 8px;
+  margin: 2px 0;
+  transition: background-color 0.18s ease, color 0.18s ease, padding-left 0.18s ease;
 }
 :deep(.el-menu-item:hover),
 :deep(.el-sub-menu__title:hover) {
   background-color: rgba(76, 167, 119, 0.15);
+  color: #fff;
 }
 :deep(.el-menu-item.is-active) {
   background: linear-gradient(90deg, #4ca777, #2e7d32);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(76, 167, 119, 0.35);
+}
+/* A1: 底部版本徽标 */
+.aside-foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 0 14px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.aside-foot .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ca777;
+  box-shadow: 0 0 6px rgba(76, 167, 119, 0.8);
 }
 </style>

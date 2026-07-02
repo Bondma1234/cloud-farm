@@ -12,6 +12,7 @@ export function useCountUp(getter, opts = {}) {
   const { duration = 800 } = opts;
   const display = ref(0);
   let raf = null;
+  let settle = null;
 
   const animateTo = (target) => {
     // 非数字直接透传(如 '—' / '✕')
@@ -22,6 +23,7 @@ export function useCountUp(getter, opts = {}) {
     const from = typeof display.value === 'number' ? display.value : 0;
     const start = performance.now();
     if (raf) cancelAnimationFrame(raf);
+    if (settle) clearTimeout(settle);
     const tick = (now) => {
       const t = Math.min(1, (now - start) / duration);
       // easeOutCubic
@@ -31,6 +33,11 @@ export function useCountUp(getter, opts = {}) {
       else display.value = target;
     };
     raf = requestAnimationFrame(tick);
+    // 兜底:后台标签页 rAF 被冻结时,到点强制落终值(与 admin useCountUp 同策略)
+    settle = setTimeout(() => {
+      if (raf) cancelAnimationFrame(raf);
+      display.value = target;
+    }, duration + 80);
   };
 
   watch(getter, (v) => animateTo(v), { immediate: true });
