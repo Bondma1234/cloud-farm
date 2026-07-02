@@ -13,6 +13,7 @@
     feed    📰       - 用于"无动态"
     photo   📷       - 用于"无照片"
     crop    🌾 作物  - 用于"无作物"
+    addr    📍 定位  - 用于"无收货地址"
     search  🔍       - 用于"搜不到"
     error   ⚠️       - 用于"出错了"
 -->
@@ -78,6 +79,12 @@ const ILLUSTS = {
     <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="80" cy="105" rx="50" ry="5" fill="#E8F4EA"/>
       <text x="80" y="78" text-anchor="middle" font-size="42">🌾</text>
+    </svg>`,
+  addr: `
+    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="80" cy="105" rx="50" ry="5" fill="#E8F4EA"/>
+      <circle cx="80" cy="56" r="30" fill="#4CA777" opacity="0.12"/>
+      <text x="80" y="74" text-anchor="middle" font-size="38">📍</text>
     </svg>`,
   search: `
     <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">

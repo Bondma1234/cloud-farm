@@ -8,7 +8,7 @@
     </view>
 
     <!-- 地址列表 -->
-    <view class="list" v-if="addresses.length">
+    <view class="list cf-stagger" v-if="addresses.length">
       <view class="addr" v-for="a in addresses" :key="a.id" @tap="toEdit(a)">
         <view class="addr-top">
           <text class="addr-n">{{ a.name }}</text>
@@ -36,11 +36,7 @@
     </view>
 
     <!-- 空态 -->
-    <view v-else class="empty">
-      <view class="empty-ic">📍</view>
-      <text class="empty-t">还没有收货地址</text>
-      <text class="empty-s">新增一个地址，方便农场给您寄送新鲜食材</text>
-    </view>
+    <EmptyState v-else type="addr" title="还没有收货地址" subtitle="新增一个地址，方便农场给您寄送新鲜食材" />
 
     <!-- 底部新增按钮 -->
     <view class="foot">
@@ -57,6 +53,7 @@ import Taro, { useRouter } from '@tarojs/taro';
 import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAppStore } from '../../stores/mock';
+import EmptyState from '../../components/EmptyState.vue';
 
 const router = useRouter();
 const store = useAppStore();
@@ -160,14 +157,6 @@ const del = (a) => {
   font-size: 12px; color: var(--color-text-sub); cursor: pointer;
 }
 .mini.danger { color: var(--color-danger); }
-
-.empty {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 100px 24px 24px; gap: 8px;
-}
-.empty-ic { font-size: 56px; opacity: 0.6; }
-.empty-t { font-size: 15px; color: var(--color-text-sub); font-weight: 500; }
-.empty-s { font-size: 12px; color: var(--color-text-mute); text-align: center; line-height: 1.6; }
 
 .foot {
   position: fixed; left: 0; right: 0; bottom: 0;

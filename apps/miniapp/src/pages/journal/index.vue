@@ -19,14 +19,16 @@
       </view>
     </scroll-view>
 
+    <!-- 首次加载骨架屏 -->
+    <Skeleton v-if="journalStore.loading && !entries.length" type="card" :count="3" />
+
     <!-- 列表(U3c 下拉刷新) -->
-    <PullRefresh v-if="filtered.length" @refresh="onRefresh">
-      <view class="list">
+    <PullRefresh v-else-if="filtered.length" @refresh="onRefresh">
+      <view class="list cf-stagger" :key="active">
       <view
-        class="card card-enter"
-        v-for="(e, idx) in filtered"
+        class="card"
+        v-for="e in filtered"
         :key="e.id"
-        :style="{ animationDelay: Math.min(idx, 8) * 60 + 'ms' }"
       >
         <view class="card-h">
           <view class="card-ic">{{ e.icon }}</view>
@@ -68,10 +70,7 @@
       </view>
     </PullRefresh>
 
-    <view v-else class="empty">
-      <text class="empty-ic">📭</text>
-      <text>这个分类下还没有动态</text>
-    </view>
+    <EmptyState v-else type="feed" title="这个分类下还没有动态" subtitle="换个筛选,或下拉刷新看看" />
 
     <view style="height: 40px" />
   </view>
@@ -83,6 +82,8 @@ import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useJournalStore } from '../../stores/journal';
 import PullRefresh from '../../components/PullRefresh.vue';
+import Skeleton from '../../components/Skeleton.vue';
+import EmptyState from '../../components/EmptyState.vue';
 
 const journalStore = useJournalStore();
 const { list: entries } = storeToRefs(journalStore);
@@ -166,15 +167,6 @@ const share = (e) => Taro.showToast({ title: '分享卡片（待开放）', icon
   background: #fff; border-radius: 14px; padding: 14px;
   box-shadow: var(--shadow-sm);
 }
-/* U3b 卡片入场 stagger */
-.card-enter {
-  opacity: 0;
-  animation: card-in 0.4s ease-out forwards;
-}
-@keyframes card-in {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 /* U3b 点赞弹跳 */
 .like-ic { display: inline-block; transition: transform 0.15s; }
 .like-ic.bounce { animation: like-bounce 0.5s cubic-bezier(0.34,1.56,0.64,1); }
@@ -220,10 +212,4 @@ const share = (e) => Taro.showToast({ title: '分享卡片（待开放）', icon
   font-size: 12px; color: var(--color-text-mute); cursor: pointer;
 }
 .act-n, .act-l { font-size: 12px; }
-
-.empty {
-  text-align: center; padding: 80px 0; color: var(--color-text-mute);
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.empty-ic { font-size: 48px; opacity: 0.5; }
 </style>

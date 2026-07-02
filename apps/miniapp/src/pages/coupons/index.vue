@@ -20,7 +20,7 @@
 
     <Skeleton v-if="loading && !list.length" type="card" :count="2" />
 
-    <view v-else-if="filtered.length" class="list">
+    <view v-else-if="filtered.length" class="list cf-stagger" :key="active">
       <view v-for="c in filtered" :key="c.id" :class="['coupon', c.status]">
         <!-- 左:金额 -->
         <view class="coupon-l">

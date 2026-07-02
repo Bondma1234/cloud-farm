@@ -18,8 +18,11 @@
       </view>
     </scroll-view>
 
+    <!-- 首次加载骨架屏 -->
+    <Skeleton v-if="cropStore.loading && !crops.length" type="card" :count="3" />
+
     <!-- 作物卡片 -->
-    <view class="grid" v-if="filtered.length">
+    <view class="grid cf-stagger" v-else-if="filtered.length" :key="active">
       <view class="card" v-for="c in filtered" :key="c.id" @tap="openDetail(c)">
         <image :src="c.cover" mode="aspectFill" class="cover" />
         <view class="diff">
@@ -53,10 +56,7 @@
       </view>
     </view>
 
-    <view v-else class="empty">
-      <text class="empty-ic">🌾</text>
-      <text>这个季节暂时没有可种作物</text>
-    </view>
+    <EmptyState v-else type="crop" title="这个季节暂时没有可种作物" subtitle="换个季节看看,或去认养当季推荐" />
 
     <view style="height: 80px" />
 
@@ -72,6 +72,8 @@ import Taro from '@tarojs/taro';
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCropStore } from '../../stores/crops';
+import Skeleton from '../../components/Skeleton.vue';
+import EmptyState from '../../components/EmptyState.vue';
 
 const cropStore = useCropStore();
 const { list: crops } = storeToRefs(cropStore);
@@ -184,12 +186,6 @@ const goPackages = () => Taro.navigateTo({ url: '/pages/packages/index' })
 }
 .rec-l { color: var(--color-text-mute); }
 .rec-v { color: var(--color-primary-dark); font-weight: 600; }
-
-.empty {
-  text-align: center; padding: 80px 0; color: var(--color-text-mute);
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.empty-ic { font-size: 48px; opacity: 0.5; }
 
 .cta {
   position: fixed; left: 16px; right: 16px; z-index: 9;

@@ -24,7 +24,7 @@
     <Skeleton v-if="orderStore.loading && !orderStore.list.length" type="line" :count="4" />
 
     <!-- 订单列表 -->
-    <view class="list" v-else-if="filtered.length">
+    <view class="list cf-stagger" v-else-if="filtered.length" :key="active">
       <view class="order" v-for="o in filtered" :key="o.id" @tap="toDetail(o)">
         <view class="order-h">
           <text class="order-type">{{ o.typeIcon }} {{ o.type }}</text>
