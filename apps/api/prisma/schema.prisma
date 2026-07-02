@@ -258,3 +258,22 @@ model Command {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+// ============ LiveRoom(农场直击 · C5)============
+// C 端"直播"tab 的公开展示内容 —— 农场公共场景直击(采收/大棚/打包/慢直播)。
+// 注意:这不是"直播带货",也不是用户私有摄像头(那是 my-plot 里的 Camera);
+// 是农场公开场景的对外展示,无弹幕/无商品挂车(见架构 v2 §5.5)。
+model LiveRoom {
+  id        String   @id            // 'live-001'
+  title     String                  // '挖红薯直击 · A 区'
+  cover     String                  // 封面图 /images/live-*.jpg
+  host      String   @default("云上田园") // 出镜的农技员 / 场长
+  viewers   Int      @default(0)    // 在看人数(展示用)
+  live      Boolean  @default(true) // 是否正在直击(false=回放/预告)
+  scene     String   @default("")   // 这块地正在做什么(一句话)
+  location  String   @default("")   // 河南·周口 · A 区
+  cropName  String   @default("")   // 当前作物
+  sortOrder Int      @default(99)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

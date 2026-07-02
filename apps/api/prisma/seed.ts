@@ -726,6 +726,17 @@ async function main() {
   });
   console.log('  ✓ demo 用户邀请码 CFDEMO88');
 
+  // ============ 农场直击(LiveRoom · C5)============
+  const liveRooms = [
+    { id: 'live-001', title: '挖红薯直击 · A 区', cover: '/images/live-harvest.jpg', host: '场长老张', viewers: 1243, live: true, scene: '今日采收沙地蜜薯,现挖现称重现打包', location: '河南·周口 · A 区', cropName: '蜜薯', sortOrder: 1 },
+    { id: 'live-002', title: '草莓大棚慢直击', cover: '/images/live-greenhouse.jpg', host: '农技员小李', viewers: 482, live: true, scene: '恒温大棚里的奶油草莓正在转红', location: '河南·周口 · B 区大棚', cropName: '奶油草莓', sortOrder: 2 },
+    { id: 'live-003', title: '周四打包发货现场', cover: '/images/live-packing.jpg', host: '仓储组', viewers: 77, live: false, scene: '当日达冷链打包,回放可看分拣全过程', location: '基地分拣中心', cropName: '综合', sortOrder: 3 },
+  ];
+  for (const r of liveRooms) {
+    await prisma.liveRoom.upsert({ where: { id: r.id }, create: r, update: r });
+  }
+  console.log(`  ✓ ${liveRooms.length} 农场直击场景`);
+
   console.log('🌾 seed 完成');
 }
 

@@ -174,6 +174,21 @@ export interface Crop {
   sortOrder?: number;
 }
 
+// ============ LiveRoom(农场直击 · C5)============
+// C 端"直播"tab 的公开展示;非直播带货、非用户私有摄像头。
+export interface LiveRoom {
+  id: string;
+  title: string;
+  cover: string;
+  host: string;
+  viewers: number;
+  live: boolean;
+  scene: string;
+  location: string;
+  cropName: string;
+  sortOrder?: number;
+}
+
 // ============ Auth ============
 export interface LoginParams {
   phone: string;

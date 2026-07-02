@@ -154,10 +154,11 @@
 import Taro from '@tarojs/taro';
 import { computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { LIVE_ROOMS, JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
+import { JOURNAL_ENTRIES, useAppStore } from '../../stores/mock';
 import { usePackageStore } from '../../stores/packages';
 import { useOrderStore } from '../../stores/orders';
 import { useMyPlotStore } from '../../stores/myPlot';
+import { useLiveStore } from '../../stores/live';
 import { getCurrentSeason, getPlantedDays, formatJoinedDate } from '../../utils/season';
 import { useCountUp } from '../../utils/useCountUp';
 import Skeleton from '../../components/Skeleton.vue';
@@ -179,7 +180,10 @@ const growingCount = computed(() => orderStore.list.filter(o => o.status === 'gr
 const myPlotStore = useMyPlotStore();
 const { plot: myPlot } = storeToRefs(myPlotStore);
 
-const liveRooms = LIVE_ROOMS.filter(l => l.live);
+// C5: 直播区改走 live store(真后端 + mock 兜底)
+const liveStore = useLiveStore();
+const { list: liveList } = storeToRefs(liveStore);
+const liveRooms = computed(() => liveList.value.filter(l => l.live).slice(0, 4));
 // home 页只显示最近 3 条，全部走 /pages/journal
 const feedPreview = JOURNAL_ENTRIES.slice(0, 3);
 
@@ -204,6 +208,8 @@ const goLive = id => Taro.navigateTo({ url: `/pages/live/index?id=${id}` });
 onMounted(async () => {
   // 拉真套餐
   pkgStore.fetch();
+  // C5: 拉农场直击
+  liveStore.fetch();
   // 拉真用户 createdAt(没登录就静默跳过)
   await store.bootstrap?.();
   // 登录了就拉订单 + 种植中地块(给"我的田园"数据卡)
