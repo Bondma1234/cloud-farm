@@ -6,7 +6,9 @@
   -->
   <el-container class="root">
     <admin-aside />
-    <el-container>
+    <!-- header 包在自定义组件里,el-container 识别不出 el-header,
+         方向会误判成横向(header 变成左侧一竖条)——必须显式 vertical -->
+    <el-container direction="vertical">
       <admin-header :title="title" />
       <el-main>
         <router-view v-slot="{ Component }">
