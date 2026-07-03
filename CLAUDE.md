@@ -33,7 +33,7 @@
 ```
 Cloud_Farm_project/
 ├── apps/
-│   ├── miniapp/              # Taro 4 + Vue 3              微信小程序 + H5(主战场,17 页 mock)
+│   ├── miniapp/              # Taro 4 + Vue 3              微信小程序 + H5(主战场,21 页全接真后端)
 │   ├── api/        ★ P1      # NestJS 10 + ConfigModule    后端 (跑通 /api/health)
 │   ├── admin/      ★ P1      # Vue 3 + Vite + Element Plus B 端后台 (登录页 + 工作台壳)
 │   └── web/         🚧 P6     # Vue 3 + Vite                C 端 Web Portal (待 P6 拆)
@@ -223,7 +223,7 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 - **新加一类 mock 图**: 加进 `public/images/`,然后**只在** `src/mock/images.js` 里加常量
 - **改全局样式**: `app.scss` 里加 token,组件里只用 `var(--xxx)`
 
-## 9. 当前进度(2026-05-01)
+## 9. 当前进度(2026-07-03)
 
 ✅ **已完成**
 
@@ -471,6 +471,37 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
     - 错误上报匿名 + 静默,绝不会因为上报失败再触发新错误
     - `tsconfig.test.json` 单独管 jest,nest build 的 rootDir 不被污染
 
+- **★ UI 打磨专项 C0-C6 + Admin A1-A3(2026-06-17 ~ 07-03)** ——
+  - **打磨方法论**:每批 = 交互/视觉升级 + 真后端浏览器走查 + 顺手修撞见的 bug + token 收口,独立 commit + tag 可单独回滚
+  - **git tag 导航**:`pre-ui-polish`(打磨前回滚锚点)→ `ui-c0-c2` / `ui-c3` / `ui-c4` / `ui-c5` / `ui-c6` / `admin-a1-a3`
+  - **C0 地基**(纯新增,零观感变化):
+    - tokens.scss 加运动 token(`--ease-spring/out/in-out` + `--dur-fast/base/slow`)+ 卡片配套变量
+    - app.scss 加 `.cf-card` 卡片基类 + `.cf-enter`/`.cf-stagger` 入场动效(全局工具类,`prefers-reduced-motion` 兜底)
+    - 新建 `components/ProgressRing.vue` 可复用进度环(SVG 弧线 grow 动画 + 颜色 props)
+  - **C1 首页**:多层径向渐变 hero / 我的田园卡加进度环+作物阶段(onMounted 拉 myPlot)/ 入口图标圆角方块化 / section 副标题
+  - **C2 我的田**:内联进度环换 ProgressRing 组件 / 抓拍快门闪光动画 / 指令提交 SuccessOverlay 动画反馈 / 日记时间线 stagger
+  - **C3 购买链路**(packages/package-detail/plot-picker/checkout):卡片 stagger + chip 过渡 + 地块选中 scale 弹出 + 金额 count-up
+    - **配套下单 e2e 回归网** `apps/api/test/order-create.e2e-spec.ts` 5 用例(401/正常下单+锁地块/重复下单 409/作物超限 400/优惠券抵扣+标记 used),全套 e2e 13 项
+  - **C4 列表页一致性**(orders/journal/photos/crops/coupons/address):统一 `.cf-stagger` 入场 + `EmptyState`(新增 addr 类型)+ `Skeleton`,删掉各页自造的 empty div 和 stagger keyframes
+  - **C5 live 接真后端 + 重做「农场直击」**:
+    - 现状直播带货界面(弹幕+小黄车)与架构 v2 §5.5 冲突,经用户确认重做为农场公开场景直击
+    - schema 加 `LiveRoom` 表(migration `add_live_room`)+ seed 3 场景 + `LiveModule`(GET /api/live 公开只读)
+    - shared 加 LiveRoom 类型 / api-client 加 live.ts / miniapp 加 stores/live.js(mock 兜底套路)
+    - live 页重做:出镜农技员 + 场景描述 + 认养引导 CTA,home 直播区同步接 store
+    - **至此 miniapp(已扩到 21 页)彻底无 mock 直引**
+  - **C6 TabBar**:切 tab 图标 tab-pop 弹跳 + 圆点弹出(H5 端 index.html;小程序原生 tabBar 能力受限保持不动)
+  - **Admin A1 外壳**:el-main 背景分层 + el-card 12px 圆角/无边框/轻阴影 + 弹窗圆角 + 侧边栏菜单圆角化/过渡/底部版本徽标
+  - **Admin A2 看板**:KPI 4 卡 count-up(新建 `composables/useCountUp.ts`)+ 顶部语义色条 + hover 浮起 + 饼图统一品牌绿系
+  - **Admin A3 表格**:**App.vue 包 el-config-provider(zh-cn)**(此前无 locale,表格空态英文 No Data → 暂无数据)+ 表头品牌化 + hover 行浅绿 + 清掉 Orders/Packages 的"P3 阶段"开发注记 alert
+  - **走查修掉的真 bug**(打磨的隐藏价值):
+    1. seed `crop` 字段中文乱码(重跑 db:seed 修复)
+    2. ProgressRing 纯 rAF 动画后台标签页不触发
+    3. `cf-stagger` fill-mode `both` 动画结束后持续占用 transform,覆盖 `.cell.active` 选中态 scale → 改 `backwards`
+    4. admin + miniapp 两版 useCountUp 纯 rAF 后台标签页冻结,KPI 永远显示 0 → 加 setTimeout 兜底落终值
+    5. **DefaultLayout 布局 bug**:el-container 识别不出包装过的 AdminHeader,方向误判横向,header 被挤成左侧竖条 → 显式 `direction="vertical"`(P8 W1 起就潜伏,用户截图发现)
+    6. admin vite optimizeDeps 补 `element-plus/es/locale/lang/zh-cn`,防 dev 中途 re-optimization chunk 混载
+  - **验收**:全程真后端(demo 用户 13800000001 / admin 18888888888)浏览器 DOM 走查,console 零报错;miniapp/admin 双构建过;e2e 13 项全绿
+
 🚧 **下一步路线**(架构 v2 §10)
 
 | 阶段 | 内容 | 当前状态 |
@@ -492,8 +523,10 @@ npm run dev:weapp        # 微信小程序 dev(目前未常态使用)
 | **★ D 细节深化** | TabBar 品牌化 + 成功反馈动画 + Loading 进度 + seed 扩充(20+订单/动态) + 路由 fade | ✅ 已完成 |
 | **★ B C 端二级页** | 优惠券(Coupon+UserCoupon)+ 邀请好友(inviteCode+发券)+ 设置页 + 帮助中心 + profile 接真数据 + checkout 选券抵扣 | ✅ 已完成 |
 | **★ U C 端 UI 进阶** | 首页 hero 重设计+我的田园数据卡 / 我的田进度环+生长阶段+日记时间线 / count-up+点赞弹跳+卡片 stagger+下拉刷新 | ✅ 已完成 |
+| **★ UI 打磨 C0-C6** | 动效地基(.cf-card/.cf-stagger/ProgressRing)+ 首页/我的田/购买链路/列表页逐页打磨 + live 重做「农场直击」接真后端 + TabBar 弹跳 + 下单 e2e 回归网 | ✅ 已完成 |
+| **★ Admin 打磨 A1-A3** | 品牌化外壳 + 看板 count-up/绿系图表 + EP 中文化/表头品牌化 + DefaultLayout 布局修复 | ✅ 已完成 |
 | **P5 真萤石云接入** | CameraService 里把 mock 地址换成 EZOPEN OpenAPI 调用 | 待萤石账号 |
-| **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 17 个页面 | 用户决定暂缓,排在 P5 后 |
+| **P6 C 端 Web Portal 拆分** | apps/web/ 独立 Vue 3,翻译现有 21 个页面 | 用户决定暂缓,排在 P5 后 |
 | **P7 部署上云** | 域名 + ICP + ECS + Docker + 微信支付商户号 | 法务先行,暂搁置 |
 | 旁路任务 | Cloudflare Pages 接 Git 自动部署 / 装 Docker(切真 MySQL 用) | 已搭好基建,暂搁置 |
 
