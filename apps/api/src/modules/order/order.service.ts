@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrderDto } from './dto/order.dto';
 import { CreateOrderDto } from './dto/order-create.dto';
+import { CreateShopOrderDto } from './dto/shop-order-create.dto';
 
 @Injectable()
 export class OrderService {
@@ -130,6 +131,112 @@ export class OrderService {
         },
       });
 
+      return this.toDto(order);
+    });
+  }
+
+  /**
+   * 创建农产品商城订单(type=产地直送)
+   * - 事务:校验地址 + 逐 SKU 校验库存 + 扣库存 + 累计商品数
+   * - 冷链标的物且商品金额 < 199 → 加 20 运费(满 199 包冷链)
+   * - 可选优惠券(scope=all/shop 适用)
+   */
+  async createShop(userId: number, dto: CreateShopOrderDto): Promise<OrderDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const addr = await tx.address.findFirst({ where: { id: dto.addressId, userId } });
+      if (!addr) throw new BadRequestException(`收货地址 ${dto.addressId} 不存在`);
+
+      let goodsTotal = 0;
+      let totalQty = 0;
+      let anyCold = false;
+      let firstCover = '';
+      let firstName = '';
+      const subItems: { label: string; value: string }[] = [];
+      const itemsMeta: Record<string, unknown>[] = [];
+
+      for (const line of dto.items) {
+        const sku = await tx.sku.findUnique({ where: { id: line.skuId }, include: { goods: true } });
+        if (!sku) throw new BadRequestException(`商品规格 ${line.skuId} 不存在`);
+        if (sku.stock < line.qty) {
+          throw new ConflictException(`${sku.goods.name}(${sku.spec})库存不足,仅剩 ${sku.stock}`);
+        }
+        goodsTotal += sku.price * line.qty;
+        totalQty += line.qty;
+        if (sku.goods.coldChain) anyCold = true;
+        if (!firstCover) {
+          firstCover = sku.goods.cover;
+          firstName = sku.goods.name;
+        }
+        subItems.push({ label: sku.goods.name, value: `${sku.spec} ×${line.qty}` });
+        itemsMeta.push({
+          goodsId: sku.goodsId, goodsName: sku.goods.name, skuId: sku.id,
+          spec: sku.spec, price: sku.price, qty: line.qty,
+        });
+        // 扣库存 + 累计销量
+        await tx.sku.update({ where: { id: sku.id }, data: { stock: sku.stock - line.qty } });
+        await tx.goods.update({ where: { id: sku.goodsId }, data: { sales: { increment: line.qty } } });
+      }
+
+      // 冷链运费:含冷链品且不满 199 → +20
+      const shipping = anyCold && goodsTotal < 199 ? 20 : 0;
+
+      // 优惠券(可选;商城单 scope=all/shop 适用)
+      let discount = 0;
+      let discountMeta: { couponName: string; amount: number } | null = null;
+      const today = new Date();
+      if (dto.couponId) {
+        const uc = await tx.userCoupon.findFirst({
+          where: { id: dto.couponId, userId },
+          include: { coupon: true },
+        });
+        if (!uc) throw new BadRequestException('优惠券不存在或不属于你');
+        if (uc.status !== 'unused') throw new BadRequestException('优惠券已使用或已过期');
+        if (uc.expireAt < today) throw new BadRequestException('优惠券已过期');
+        if (uc.coupon.scope === 'adopt') throw new BadRequestException('该券仅限认养使用');
+        if (goodsTotal < uc.coupon.threshold) {
+          throw new BadRequestException(`未满 ${uc.coupon.threshold} 元,该券不可用`);
+        }
+        discount = uc.coupon.amount;
+        discountMeta = { couponName: uc.coupon.name, amount: uc.coupon.amount };
+      }
+
+      const finalPrice = Math.max(0, goodsTotal + shipping - discount);
+
+      // 生成订单 id
+      const ymd = today.toISOString().slice(0, 10).replace(/-/g, '').slice(2);
+      const sameDayCount = await tx.order.count({
+        where: { id: { startsWith: `ORD-20${ymd.slice(0, 2)}-${ymd.slice(2)}` } },
+      });
+      const orderId = `ORD-20${ymd.slice(0, 2)}-${ymd.slice(2)}${String(sameDayCount + 1).padStart(2, '0')}`;
+
+      if (shipping > 0) subItems.push({ label: '冷链运费', value: `+¥${shipping}` });
+      if (discountMeta) subItems.push({ label: '优惠券', value: `${discountMeta.couponName} -¥${discountMeta.amount}` });
+
+      // 标记券已用
+      if (dto.couponId && discountMeta) {
+        await tx.userCoupon.update({
+          where: { id: dto.couponId },
+          data: { status: 'used', usedAt: today, usedOrderId: orderId },
+        });
+      }
+
+      const order = await tx.order.create({
+        data: {
+          id: orderId,
+          userId,
+          type: '产地直送',
+          typeIcon: '📦',
+          title: dto.items.length > 1 ? `${firstName} 等 ${dto.items.length} 件` : firstName,
+          cover: firstCover,
+          price: finalPrice,
+          count: totalQty,
+          status: 'pending',
+          statusLabel: '待付款',
+          date: today,
+          addressId: addr.id,
+          metadata: JSON.stringify({ subItems, items: itemsMeta, shipping, goodsTotal, discount: discountMeta }),
+        },
+      });
       return this.toDto(order);
     });
   }

@@ -38,7 +38,7 @@
         <text class="ico">🎥</text>
         <text>直播</text>
       </view>
-      <view class="quick-item" @tap="go('/pages/profile/index')">
+      <view class="quick-item" @tap="go('/pages/shop/index')">
         <text class="ico">🛒</text>
         <text>农产品</text>
       </view>

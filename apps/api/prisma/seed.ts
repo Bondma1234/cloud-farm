@@ -737,6 +737,85 @@ async function main() {
   }
   console.log(`  ✓ ${liveRooms.length} 农场直击场景`);
 
+  // ============ 农产品商城 Goods + Sku(M-08)============
+  const goodsList = [
+    {
+      id: 'g-sweetpotah', name: '沙地蜜薯', category: 'fresh', cover: '/images/crop-sweetpotato.jpg',
+      intro: '河南沙地种植,糖心流油,蒸烤皆宜。现挖现发,带泥保鲜。', origin: '河南·周口 A 区',
+      tags: JSON.stringify(['当季', '现挖现发']), coldChain: false, sales: 3820, rating: 49, sortOrder: 1,
+      skus: [
+        { id: 'sku-sweetpotah-3', spec: '3 斤装', price: 19, originalPrice: 29, stock: 500, sortOrder: 1 },
+        { id: 'sku-sweetpotah-5', spec: '5 斤装', price: 29, originalPrice: 45, stock: 300, sortOrder: 2 },
+        { id: 'sku-sweetpotah-10', spec: '10 斤箱', price: 49, originalPrice: 79, stock: 120, sortOrder: 3 },
+      ],
+    },
+    {
+      id: 'g-strawberry', name: '奶油草莓', category: 'fresh', cover: '/images/crop-strawberry.jpg',
+      intro: '大棚恒温奶油草莓,果香浓郁,冷链锁鲜次日达。', origin: '河南·周口 B 区大棚',
+      tags: JSON.stringify(['冷链', '大棚直供']), coldChain: true, sales: 1560, rating: 48, sortOrder: 2,
+      skus: [
+        { id: 'sku-strawberry-2', spec: '2 盒 · 约 500g', price: 39, originalPrice: 59, stock: 200, sortOrder: 1 },
+        { id: 'sku-strawberry-4', spec: '4 盒 · 约 1kg', price: 69, originalPrice: 99, stock: 80, sortOrder: 2 },
+      ],
+    },
+    {
+      id: 'g-tomato', name: '水果小番茄', category: 'fresh', cover: '/images/crop-tomato.jpg',
+      intro: '藤上熟小番茄,皮薄多汁,酸甜可当水果直接吃。', origin: '河南·周口 A 区',
+      tags: JSON.stringify(['藤上熟']), coldChain: true, sales: 2140, rating: 48, sortOrder: 3,
+      skus: [
+        { id: 'sku-tomato-3', spec: '3 斤装', price: 25, originalPrice: 39, stock: 260, sortOrder: 1 },
+      ],
+    },
+    {
+      id: 'g-pumpkin', name: '贝贝南瓜', category: 'fresh', cover: '/images/crop-pumpkin.jpg',
+      intro: '日式贝贝南瓜,粉糯香甜,板栗口感,耐储存。', origin: '河南·周口 C 区',
+      tags: JSON.stringify(['耐储运', '粉糯']), coldChain: false, sales: 980, rating: 47, sortOrder: 4,
+      skus: [
+        { id: 'sku-pumpkin-5', spec: '5 斤装', price: 29, originalPrice: 39, stock: 180, sortOrder: 1 },
+      ],
+    },
+    {
+      id: 'g-sweetpotah-dry', name: '手工红薯干', category: 'processed', cover: '/images/farm-detail-1.jpg',
+      intro: '自家蜜薯低温烘制,无添加,软糯有嚼劲,追剧零食。', origin: '基地加工坊',
+      tags: JSON.stringify(['无添加', '零食']), coldChain: false, sales: 4230, rating: 49, sortOrder: 5,
+      skus: [
+        { id: 'sku-spdry-2', spec: '2 袋 · 约 500g', price: 32, originalPrice: 49, stock: 400, sortOrder: 1 },
+        { id: 'sku-spdry-5', spec: '5 袋 · 约 1.25kg', price: 69, originalPrice: 99, stock: 150, sortOrder: 2 },
+      ],
+    },
+    {
+      id: 'g-farm-box', name: '田园综合菜箱', category: 'box', cover: '/images/order-pkg.jpg',
+      intro: '当季 5-6 种时蔬随机搭配,农场当日采摘,冷链直送。', origin: '河南·周口基地',
+      tags: JSON.stringify(['当季', '冷链', '随机搭配']), coldChain: true, sales: 760, rating: 48, sortOrder: 6,
+      skus: [
+        { id: 'sku-box-s', spec: '小箱 · 约 5 斤', price: 59, originalPrice: 89, stock: 100, sortOrder: 1 },
+        { id: 'sku-box-l', spec: '大箱 · 约 10 斤', price: 99, originalPrice: 139, stock: 60, sortOrder: 2 },
+      ],
+    },
+    {
+      id: 'g-gift-card', name: '认养体验礼卡', category: 'around', cover: '/images/pkg-family.jpg',
+      intro: '送礼佳选,可兑换一次亲子认养体验,含名字立牌。', origin: '云上田园',
+      tags: JSON.stringify(['送礼', '可兑换']), coldChain: false, sales: 320, rating: 50, sortOrder: 7,
+      skus: [
+        { id: 'sku-giftcard-1', spec: '电子礼卡', price: 199, originalPrice: 0, stock: 999, sortOrder: 1 },
+      ],
+    },
+  ];
+  let skuCount = 0;
+  for (const g of goodsList) {
+    const { skus, ...goods } = g;
+    await prisma.goods.upsert({ where: { id: goods.id }, create: goods, update: goods });
+    for (const s of skus) {
+      await prisma.sku.upsert({
+        where: { id: s.id },
+        create: { ...s, goodsId: goods.id },
+        update: { ...s, goodsId: goods.id },
+      });
+      skuCount++;
+    }
+  }
+  console.log(`  ✓ ${goodsList.length} 商品 / ${skuCount} SKU`);
+
   console.log('🌾 seed 完成');
 }
 

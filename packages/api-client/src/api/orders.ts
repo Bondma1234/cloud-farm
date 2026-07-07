@@ -28,6 +28,18 @@ export function createOrder(input: CreateOrderInput): Promise<Order> {
   return post<Order>('/orders', input);
 }
 
+/** 创建商城订单入参(M-08) */
+export interface CreateShopOrderInput {
+  items: { skuId: string; qty: number }[];
+  addressId: string;
+  couponId?: string;
+}
+
+/** 创建农产品商城订单(type=产地直送,扣库存 + 冷链运费) */
+export function createShopOrder(input: CreateShopOrderInput): Promise<Order> {
+  return post<Order>('/orders/shop', input);
+}
+
 /** 取消订单(待付款 / 待发货可取消) */
 export function cancelOrder(id: string): Promise<Order> {
   return patch<Order>(`/orders/${id}/cancel`);

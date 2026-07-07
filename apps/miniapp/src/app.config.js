@@ -7,7 +7,11 @@ export default {
     'pages/checkout/index',
     'pages/my-plot/index',
     'pages/live/index',
-    'pages/profile/index'
+    'pages/profile/index',
+    'pages/shop/index',
+    'pages/goods-detail/index',
+    'pages/cart/index',
+    'pages/shop-checkout/index'
   ],
   window: {
     backgroundTextStyle: 'light',

@@ -277,3 +277,37 @@ model LiveRoom {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ============ 农产品商城 Goods + Sku(M-08)============
+// C 端商城:认养之外单独买农产品(鲜食/深加工/套餐箱/周边)。
+// 一个 Goods 挂多个 Sku(规格,如"3 斤装 / 5 斤装"),库存/价格在 Sku 上。
+model Goods {
+  id        String   @id            // 'g-sweetpotato'
+  name      String                  // '沙地蜜薯'
+  category  String                  // fresh / processed / box / around
+  cover     String
+  intro     String   @default("")
+  origin    String   @default("河南·周口") // 产地
+  tags      String   @default("[]") // JSON 数组字符串:['当季','冷链']
+  coldChain Boolean  @default(false)// 冷链标的物 → 结算加运费(满 199 包冷链)
+  sales     Int      @default(0)    // 已售(展示用)
+  rating    Int      @default(48)   // 评分 ×10(48 = 4.8 分)
+  status    String   @default("active") // active / archived
+  sortOrder Int      @default(99)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  skus      Sku[]
+}
+
+model Sku {
+  id            String  @id          // 'sku-sweetpotato-3'
+  goodsId       String
+  spec          String               // '3 斤装'
+  price         Int                  // 现价(元)
+  originalPrice Int     @default(0)  // 划线价,0=不显示
+  stock         Int     @default(0)
+  sortOrder     Int     @default(99)
+
+  goods         Goods   @relation(fields: [goodsId], references: [id], onDelete: Cascade)
+}

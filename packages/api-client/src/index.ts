@@ -23,3 +23,4 @@ export * from './api/cameras';
 export * from './api/errors';
 export * from './api/coupons';
 export * from './api/live';
+export * from './api/goods';

@@ -18,6 +18,7 @@ import { ErrorLogModule } from './modules/error-log/error-log.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { InviteModule } from './modules/invite/invite.module';
 import { LiveModule } from './modules/live/live.module';
+import { GoodsModule } from './modules/goods/goods.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { LiveModule } from './modules/live/live.module';
     CouponModule,
     InviteModule,
     LiveModule,
+    GoodsModule,
   ],
   controllers: [HealthController],
   providers: [],

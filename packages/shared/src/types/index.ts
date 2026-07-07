@@ -189,6 +189,30 @@ export interface LiveRoom {
   sortOrder?: number;
 }
 
+// ============ 农产品商城 Goods + Sku(M-08)============
+export interface Sku {
+  id: string;
+  spec: string;
+  price: number;
+  originalPrice: number;
+  stock: number;
+}
+
+export interface Goods {
+  id: string;
+  name: string;
+  category: string; // fresh / processed / box / around
+  cover: string;
+  intro: string;
+  origin: string;
+  tags: string[];
+  coldChain: boolean;
+  sales: number;
+  rating: number;   // 4.8
+  minPrice: number; // 列表页展示最低价
+  skus: Sku[];
+}
+
 // ============ Auth ============
 export interface LoginParams {
   phone: string;

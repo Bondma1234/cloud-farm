@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import { OrderService } from './order.service';
 import { OrderDto, OrderListQueryDto } from './dto/order.dto';
 import { CreateOrderDto } from './dto/order-create.dto';
+import { CreateShopOrderDto } from './dto/shop-order-create.dto';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { JwtPayload } from '../../common/auth/jwt-payload';
@@ -39,6 +40,14 @@ export class OrderController {
   @ApiResponse({ status: 409, description: '地块已被认养' })
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateOrderDto): Promise<OrderDto> {
     return this.orderService.create(user.sub, dto);
+  }
+
+  @Post('shop')
+  @ApiOperation({ summary: '创建农产品商城订单(type=产地直送,扣库存 + 冷链运费)' })
+  @ApiResponse({ status: 201, type: OrderDto })
+  @ApiResponse({ status: 409, description: '库存不足' })
+  createShop(@CurrentUser() user: JwtPayload, @Body() dto: CreateShopOrderDto): Promise<OrderDto> {
+    return this.orderService.createShop(user.sub, dto);
   }
 
   @Patch(':id/cancel')
