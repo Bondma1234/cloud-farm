@@ -43,6 +43,12 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // seed 数据里的 /images/... mock 图片实际放在 miniapp 的 public 里,
+      // 开发期代理到 miniapp dev server(5180 需在跑);生产期这些 URL 会换成 CDN
+      '/images': {
+        target: 'http://localhost:5180',
+        changeOrigin: true,
+      },
     },
   },
 });

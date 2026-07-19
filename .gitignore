@@ -35,5 +35,6 @@ apps/api/prisma/dev.db-journal
 
 # Claude workspace local state
 .claude/local/
+.claude/worktrees/
 # settings.local.json 里都是当前这台 Windows 的绝对路径白名单，换机器没用
 .claude/settings.local.json
