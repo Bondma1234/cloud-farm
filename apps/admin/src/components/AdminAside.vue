@@ -77,7 +77,9 @@ const active = computed(() => route.path);
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  /* 左对齐,和下方菜单项图标(6px 菜单容器内边距 + 20px 项内边距)precisely 对齐 */
+  justify-content: flex-start;
+  padding-left: 26px;
   gap: 8px;
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
